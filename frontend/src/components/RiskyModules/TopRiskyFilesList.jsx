@@ -1,6 +1,5 @@
 import React from "react";
 import { FaUser, FaClock, FaCodeBranch } from "react-icons/fa";
-import { TOP_RISKY_FILES, QUICK_STATS } from "../../data/mockData";
 
 const TopRiskyFilesList = ({ files, stats }) => {
   const RiskItem = ({ file }) => {

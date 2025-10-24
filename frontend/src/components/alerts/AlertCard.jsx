@@ -1,15 +1,27 @@
 import React from "react";
-import { FaCheckCircle } from "react-icons/fa";
-import AlertTag from "./AlertTag.jsx";
+import {
+  FaCheckCircle,
+  FaCodeBranch,
+  FaExclamationTriangle,
+  FaCopy,
+  FaWrench,
+} from "react-icons/fa";
+
+const iconMap = {
+  Merge: FaCodeBranch,
+  Risk: FaExclamationTriangle,
+  Productivity: FaWrench,
+  Duplicate: FaCopy,
+  Reviewed: FaCheckCircle,
+};
 
 const AlertCard = ({ alert, onMarkAsReviewed }) => {
-  const Icon = alert.icon;
+  const Icon = iconMap[alert.category] || FaExclamationTriangle;
+
   return (
     <div
       className={`flex flex-col p-6 border border-gray-700/50 rounded-xl shadow-xl transition duration-150 relative ${
-        alert.reviewed
-          ? "bg-gray-900 opacity-80"
-          : "bg-gray-900/80 hover:border-cyan-500"
+        alert.reviewed ? "bg-gray-900 opacity-80" : "bg-gray-900/80 hover:border-cyan-500"
       }`}
     >
       {alert.reviewed && (
@@ -18,29 +30,26 @@ const AlertCard = ({ alert, onMarkAsReviewed }) => {
         </div>
       )}
 
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center space-x-3">
-          <Icon
-            className={`w-6 h-6 ${
-              alert.reviewed ? "text-gray-500" : "text-cyan-500"
-            }`}
-          />
-          <h3 className="text-lg font-semibold text-white leading-snug">
-            {alert.title}
-          </h3>
-        </div>
-        <AlertTag severity={alert.severity} />
-      </div>
-
-      <p
-        className={`text-sm mb-4 ${
-          alert.reviewed ? "text-gray-500" : "text-gray-400"
-        }`}
-      >
+      <p className={`text-sm mb-4 ${alert.reviewed ? "text-gray-500" : "text-gray-400"}`}>
         {alert.details}
       </p>
 
-      <div className="flex justify-between items-center text-xs text-gray-500 mt-auto">
+      {alert.prediction && (
+        <div className="text-sm text-cyan-400 mt-2 space-y-1">
+          <p><strong>Why this alert?</strong> {alert.prediction.explanation}</p>
+          <p className="text-gray-400 text-xs">
+            Risk Score: {(alert.prediction.riskScore * 100).toFixed(1)}% | Confidence: {(alert.prediction.confidence * 100).toFixed(1)}%
+          </p>
+          <p className="text-gray-500 text-xs">
+            Impacted Files: {alert.prediction.impactedFiles.join(", ")}
+          </p>
+          <p className="text-gray-600 text-xs italic">
+            Model: {alert.prediction.model} | Features: {alert.prediction.features.join(", ")}
+          </p>
+        </div>
+      )}
+
+      <div className="flex justify-between items-center text-xs text-gray-500 mt-auto pt-4">
         <span>{alert.time}</span>
         {alert.reviewed ? (
           <span className="flex items-center text-green-500">

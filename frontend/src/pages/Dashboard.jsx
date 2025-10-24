@@ -6,14 +6,10 @@ import CommitsPerDayChart from "../components/dashboard/CommitsPerDayChart";
 import RecentAlertsList from "../components/dashboard/RecentAlertsList";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { FiGitCommit, FiActivity } from "react-icons/fi";
+import { FaBug } from "react-icons/fa";
 import { useRepo } from "../context/RepoContext";
 import axios from "axios";
-import {
-  METRICS_DATA,
-  COMMITS_PER_DAY_DATA,
-  LINES_CHANGED_DATA,
-  RECENT_ALERTS,
-} from "../data/mockData";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -22,32 +18,15 @@ const Dashboard = () => {
   const [commits, setCommits] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const dailyCounts = {};
-
-  commits.forEach((commit) => {
-    const date = new Date(commit.commit.author.date).toISOString().split("T")[0];
-    dailyCounts[date] = (dailyCounts[date] || 0) + 1;
-  });
-
-  const chartData = Array.isArray(dailyCounts)
-    ? dailyCounts
-    : Object.entries(dailyCounts || {}).map(([date, count]) => ({ date, count }));
+  const [alerts, setAlerts] = useState([]);
+  const [issues, setIssues] = useState([]);
 
   useEffect(() => {
     if (!token) {
-      navigate("/login", { replace: true }); // redirect if not logged in
+      navigate("/login", { replace: true });
     }
   }, [token, navigate]);
-  if (!selectedRepo) {
-    return (
-      <div className="min-h-screen bg-gray-950 text-white p-6">
-        <DashboardNavbar />
-        <p className="mt-20 text-center text-gray-400">
-          No repository selected. Please go to <strong>/repos</strong> and choose one.
-        </p>
-      </div>
-    );
-  }
+
   useEffect(() => {
     if (selectedRepo) {
       setLoading(true);
@@ -69,17 +48,155 @@ const Dashboard = () => {
     }
   }, [selectedRepo]);
 
+  if (!selectedRepo) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white p-6">
+        <DashboardNavbar />
+        <p className="mt-20 text-center text-gray-400">
+          No repository selected. Please go to <strong>/repos</strong> and choose one.
+        </p>
+      </div>
+    );
+  }
+
+  // Helper functions
+  const isThisWeek = (dateStr) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    return date >= startOfWeek;
+  };
+
+  const isLastWeek = (dateStr) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const startOfLastWeek = new Date(now);
+    startOfLastWeek.setDate(now.getDate() - now.getDay() - 7);
+    startOfLastWeek.setHours(0, 0, 0, 0);
+    const endOfLastWeek = new Date(startOfLastWeek);
+    endOfLastWeek.setDate(startOfLastWeek.getDate() + 6);
+    endOfLastWeek.setHours(23, 59, 59, 999);
+    return date >= startOfLastWeek && date <= endOfLastWeek;
+  };
+
+  // Metrics
+  const totalCommits = commits.length;
+
+  const dailyAdditions = commits.reduce((sum, commit) => {
+    const additions = commit.stats?.additions || 0;
+    return sum + additions;
+  }, 0);
+
+  const totalBugs = commits.filter((commit) =>
+    commit.commit.message.toLowerCase().includes("fix") ||
+    commit.commit.message.toLowerCase().includes("bug")
+  ).length;
+
+  const currentWeekCommits = commits.filter(c => isThisWeek(c.commit.author.date)).length;
+  const lastWeekCommits = commits.filter(c => isLastWeek(c.commit.author.date)).length;
+
+  const trend = lastWeekCommits > 0
+    ? `${Math.round(((currentWeekCommits - lastWeekCommits) / lastWeekCommits) * 100)}%`
+    : "+0%";
+
+  const metrics = [
+    {
+      title: "Commits",
+      value: totalCommits,
+      unit: "",
+      trend,
+      status: "Activity this week",
+      icon: FiGitCommit,
+      iconColor: "text-blue-400",
+      trendColor: "text-green-400",
+    },
+    {
+      title: "Bugs Reported",
+      value: totalBugs,
+      unit: "",
+      trend,
+      status: "Bug-related commits",
+      icon: FaBug,
+      iconColor: "text-red-400",
+      trendColor: "text-red-400",
+    },
+    {
+      title: "Lines Added",
+      value: dailyAdditions,
+      unit: "",
+      trend,
+      status: "Codebase growth",
+      icon: FiActivity,
+      iconColor: "text-green-400",
+      trendColor: "text-green-400",
+    },
+  ];
+
+  // Chart data
+  const dailyCounts = {};
+  commits.forEach((commit) => {
+    const date = new Date(commit.commit.author.date).toISOString().split("T")[0];
+    dailyCounts[date] = (dailyCounts[date] || 0) + 1;
+  });
+
+  const chartData = Object.entries(dailyCounts).map(([date, count]) => ({ date, count }));
+
+  const commitAlerts = commits
+    .filter(c => /fix|bug|hotfix|crash|error|patch/i.test(c.commit.message))
+    .map((c, index) => ({
+      id: index,
+      title: "Bug-related commit",
+      severity: "Medium",
+      details: c.commit.message,
+      time: new Date(c.commit.author.date).toLocaleString(),
+      action: "Inspect",
+    }));
+
+  useEffect(() => {
+    if (selectedRepo) {
+      axios
+        .get(`https://api.github.com/repos/${selectedRepo.full_name}/issues?state=open&labels=bug`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => setIssues(res.data))
+        .catch((err) => console.error("Failed to fetch issues:", err.response?.data || err.message));
+    }
+  }, [selectedRepo]);
+
+  const issueAlerts = issues.map((issue) => ({
+    id: issue.id,
+    title: "Open Bug Issue",
+    severity: "High",
+    details: issue.title,
+    time: new Date(issue.created_at).toLocaleString(),
+    action: "Resolve",
+  }));
+
+  const allAlerts = [...alerts, ...commitAlerts, ...issueAlerts].sort(
+    (a, b) => new Date(b.time) - new Date(a.time)
+  );
+
   return (
     <div className="min-h-screen bg-gray-950 font-sans text-white">
       <DashboardNavbar />
 
       <main className="pt-20 pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Metric Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {METRICS_DATA.map((metric, i) => (
-            <MetricCard key={i} {...metric} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-24 bg-gray-800 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            {metrics.map((metric, i) => (
+              <MetricCard key={i} {...metric} />
+            ))}
+          </div>
+        )}
 
         {/* Charts Section */}
         <div className="mb-8">
@@ -87,14 +204,14 @@ const Dashboard = () => {
             <CommitsPerDayChart data={chartData} />
           </ChartContainer>
         </div>
+
         {/* Recent Commits */}
-        {loading && <p className="text-gray-400">Loading commits...</p>}
         {error && <p className="text-red-500">{error}</p>}
         {commits.length > 0 && (
           <div className="mb-8">
             <h3 className="text-xl font-bold mb-2">Recent Commits</h3>
             <ul className="space-y-2">
-              {Array.isArray(commits) && commits.slice(0, 5).map((commit) => (
+              {commits.slice(0, 5).map((commit) => (
                 <li key={commit.sha} className="text-sm text-gray-300">
                   <strong>{commit.commit.author.name}</strong>: {commit.commit.message}
                 </li>
@@ -104,7 +221,10 @@ const Dashboard = () => {
         )}
 
         {/* Recent Alerts */}
-        <RecentAlertsList alerts={RECENT_ALERTS} />
+        {allAlerts.length > 0 && <RecentAlertsList alerts={allAlerts} />}
+        {allAlerts.length === 0 && !loading && (
+          <p className="text-gray-400">No alerts found for this repository.</p>
+        )}
       </main>
     </div>
   );

@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const axios = require('axios');
+const githubRoutes = require("./routes/github");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -55,4 +56,5 @@ app.get('/', (req, res) => res.send('SVCA Backend Running ✅'));
 
 
 // ---------- Start server ----------
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`SVCA + ML backend running on port ${PORT}`));
+

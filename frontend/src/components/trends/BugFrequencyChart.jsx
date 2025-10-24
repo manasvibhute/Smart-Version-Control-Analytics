@@ -14,28 +14,6 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 
-const data = {
-  labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-  datasets: [
-    {
-      label: "Bugs Reported",
-      data: [45, 60, 70, 50, 80, 90],
-      borderColor: "#f87171",
-      backgroundColor: "rgba(248, 113, 113, 0.3)",
-      fill: true,
-      tension: 0.4,
-    },
-    {
-      label: "Bugs Fixed",
-      data: [55, 45, 55, 58, 60, 70],
-      borderColor: "#34d399",
-      backgroundColor: "rgba(52, 211, 153, 0.3)",
-      fill: true,
-      tension: 0.4,
-    },
-  ],
-};
-
 const options = {
   responsive: true,
   maintainAspectRatio: false,
@@ -50,9 +28,16 @@ const options = {
 };
 
 export default function BugFrequencyChart({ data }) {
-  if (!data || !Array.isArray(data.labels) || data.labels.length === 0) {
+  if (
+    !data ||
+    !Array.isArray(data.labels) ||
+    data.labels.length === 0 ||
+    !data.datasets ||
+    data.datasets.every(ds => !Array.isArray(ds.data) || ds.data.every(val => val === 0))
+  ) {
     return <p className="text-gray-400">No bug frequency data available</p>;
   }
+
   return (
     <div className="glass-card p-1 rounded-xl w-full h-80 flex flex-col">
       <div className="flex-1">

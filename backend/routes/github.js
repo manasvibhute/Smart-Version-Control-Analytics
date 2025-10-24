@@ -2,7 +2,7 @@
 const express = require("express");
 const axios = require("axios");
 const router = express.Router();
-
+const { predictAlert } = require("../ml/predictor");
 // POST /github/exchange-token
 router.post("/exchange-token", async (req, res) => {
   const { code } = req.body;
@@ -39,6 +39,12 @@ console.log("Using client_secret:", client_secret);
   }
 });
 
+router.post("/predict", (req, res) => {
+  const prediction = predictAlert(req.body);
+  res.json(prediction);
+});
+
+
 router.get("/repos", async (req, res) => {
   const authHeader = req.headers.authorization;
 
@@ -73,17 +79,98 @@ router.get("/commits", async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`https://api.github.com/repos/${repo}/commits?per_page=100`, {
+    // Step 1: Get basic commit list
+    const response = await axios.get(`https://api.github.com/repos/${repo}/commits?per_page=20`, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github.v3+json",
       },
     });
 
-    res.json({ commits: response.data });
+    const commitList = response.data;
+
+    // Step 2: Fetch full details for each commit
+    const detailedCommits = await Promise.all(
+      commitList.map(async (commit) => {
+        const sha = commit.sha;
+        try {
+          const fullCommit = await axios.get(`https://api.github.com/repos/${repo}/commits/${sha}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/vnd.github.v3+json",
+            },
+          });
+          return fullCommit.data;
+        } catch (err) {
+          console.error(`Failed to fetch commit ${sha}:`, err.message);
+          return commit; // fallback to basic commit if detailed fetch fails
+        }
+      })
+    );
+
+    res.json({ commits: detailedCommits });
   } catch (err) {
     console.error("Error fetching commits:", err.response?.data || err.message);
     res.status(500).json({ error: "Failed to fetch commits" });
+  }
+});
+
+router.get("/alerts", async (req, res) => {
+  const { repo } = req.query;
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!repo || !token) {
+    return res.status(400).json({ error: "Missing repo or token" });
+  }
+
+  try {
+    const commitsRes = await axios.get(`https://api.github.com/repos/${repo}/commits?per_page=50`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const commits = commitsRes.data;
+
+    const detailedCommits = await Promise.all(
+      commits.map(async (commit) => {
+        const sha = commit.sha;
+        try {
+          const fullCommit = await axios.get(`https://api.github.com/repos/${repo}/commits/${sha}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          return fullCommit.data;
+        } catch (err) {
+          return commit; // fallback to basic commit
+        }
+      })
+    );
+    const alerts = detailedCommits
+      .map((commit, index) => {
+        const sha = commit.sha.slice(0, 7);
+        const message = commit.commit.message;
+        const files = commit.files?.map((f) => f.filename) || [];
+        const author = commit.commit.author.name;
+        const timestamp = commit.commit.author.date;
+
+        const prediction = predictAlert({ message, files, author, timestamp });
+
+        if (!prediction) return null;
+
+        return {
+          id: index + 1,
+          title: prediction.title,
+          category: prediction.category,
+          details: prediction.details,
+          time: new Date(timestamp).toLocaleString(),
+          reviewed: false,
+          prediction,
+        };
+      })
+      .filter(Boolean); // remove nulls
+
+    res.json({ alerts });
+  } catch (err) {
+    console.error("Error generating alerts:", err.message);
+    res.status(500).json({ error: "Failed to generate alerts" });
   }
 });
 

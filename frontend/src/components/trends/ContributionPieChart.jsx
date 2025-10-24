@@ -21,7 +21,7 @@ const ContributionPieChart = ({ data }) => {
             nameKey="name"
             cx="50%"
             cy="50%"
-            outerRadius={150}
+            outerRadius={130}
             label
           >
             {pieData.map((entry, index) => (

@@ -14,8 +14,8 @@ const AlertSummary = ({ alerts }) => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700/50 shadow-2xl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 grid grid-cols-4 gap-4">
+    <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700/50 shadow-2xl z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
         {summary.map((s, i) => (
           <div key={i} className="text-center">
             <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
