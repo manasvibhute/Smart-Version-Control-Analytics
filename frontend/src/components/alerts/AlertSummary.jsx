@@ -1,14 +1,15 @@
 import React from "react";
 
 const AlertSummary = ({ alerts }) => {
+  // Hotfix: resolving merge conflict in alert summary component
   const total = alerts.length;
-  const high = alerts.filter((a) => a.severity === "High").length;
+  const highRisk = alerts.filter((a) => a.prediction?.riskScore >= 0.6).length;
   const pending = alerts.filter((a) => !a.reviewed).length;
   const reviewed = alerts.filter((a) => a.reviewed).length;
 
   const summary = [
     { title: "Total Alerts", value: total, color: "text-white" },
-    { title: "High Severity", value: high, color: "text-red-400" },
+    { title: "High Risk Alerts", value: highRisk, color: "text-red-400" },
     { title: "Pending Review", value: pending, color: "text-yellow-400" },
     { title: "Reviewed", value: reviewed, color: "text-green-400" },
   ];
@@ -28,3 +29,4 @@ const AlertSummary = ({ alerts }) => {
 };
 
 export default AlertSummary;
+
