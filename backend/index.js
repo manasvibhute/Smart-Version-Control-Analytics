@@ -20,6 +20,11 @@ app.use(session({
   resave: false,
   saveUninitialized: true
 }));
+// ✅ Add this logger here
+app.use((req, res, next) => {
+  console.log(`🔍 Incoming request: ${req.method} ${req.url}`);
+  next();
+});
 
 // ---------- Import existing routes ----------
 const userRoutes = require('./routes/users');

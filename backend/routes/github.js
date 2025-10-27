@@ -116,6 +116,7 @@ router.get("/commits", async (req, res) => {
 });
 
 router.get("/alerts", async (req, res) => {
+  console.log("⚡ /github/alerts route hit");
   const { repo } = req.query;
   const token = req.headers.authorization?.split(" ")[1];
 
@@ -130,6 +131,8 @@ router.get("/alerts", async (req, res) => {
 
     const commits = commitsRes.data;
 
+    console.log("Fetched commit messages:", commits.map(c => c.commit.message));
+
     const detailedCommits = await Promise.all(
       commits.map(async (commit) => {
         const sha = commit.sha;
@@ -137,6 +140,7 @@ router.get("/alerts", async (req, res) => {
           const fullCommit = await axios.get(`https://api.github.com/repos/${repo}/commits/${sha}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
+          console.log("Full commit object:", fullCommit.data);
           return fullCommit.data;
         } catch (err) {
           return commit; // fallback to basic commit
@@ -148,6 +152,7 @@ router.get("/alerts", async (req, res) => {
         const sha = commit.sha.slice(0, 7);
         const message = commit.commit.message;
         const files = commit.files?.map((f) => f.filename) || [];
+        console.log("Files changed:", files);
         const author = commit.commit.author.name;
         const timestamp = commit.commit.author.date;
 
