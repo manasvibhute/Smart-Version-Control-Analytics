@@ -3,7 +3,7 @@ import React from "react";
 const AlertSummary = ({ alerts }) => {
   // Hotfix: resolving merge conflict in alert summary component
   const total = alerts.length;
-  const highRisk = alerts.filter((a) => a.prediction?.riskScore >= 0.6).length;
+  const highRisk = alerts.filter((a) => a.prediction?.riskScore >= 0.4).length;
   const pending = alerts.filter((a) => !a.reviewed).length;
   const reviewed = alerts.filter((a) => a.reviewed).length;
 

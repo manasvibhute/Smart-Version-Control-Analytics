@@ -20,6 +20,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState([]);
   const [issues, setIssues] = useState([]);
+  const { setRepoHealth } = useRepo();
 
   useEffect(() => {
     if (!token) {
@@ -177,6 +178,49 @@ const Dashboard = () => {
   const allAlerts = [...alerts, ...commitAlerts, ...issueAlerts].sort(
     (a, b) => new Date(b.time) - new Date(a.time)
   );
+
+  useEffect(() => {
+    if (!selectedRepo || !selectedRepo.full_name) return;
+
+    const fetchHealthData = async () => {
+      console.log("✅ Calculating health for:", selectedRepo.full_name);
+      try {
+        const [alertsRes, commitsRes] = await Promise.all([
+          axios.get("http://localhost:5000/github/alerts", {
+            params: { repo: selectedRepo.full_name },
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("http://localhost:5000/github/commits", {
+            params: { repo: selectedRepo.full_name },
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        const alerts = alertsRes.data.alerts || [];
+        const commits = commitsRes.data.commits || [];
+
+        const riskyCommits = commits.filter(c => c.riskScore >= 0.6).length;
+        const avgAlertRisk = alerts.length
+          ? alerts.reduce((sum, a) => {
+            const score = parseFloat(a.prediction?.riskScore || 0);
+            return sum + (isNaN(score) ? 0 : score);
+          }, 0) / alerts.length
+          : 0;
+        console.log("🐛 riskyCommits:", riskyCommits);
+        console.log("🐛 avgAlertRisk:", avgAlertRisk);
+
+        const healthScore = Math.round(
+          100 - (riskyCommits * 5 + avgAlertRisk * 30)
+        );
+        console.log("📊 Calculated health score:", healthScore);
+        setRepoHealth(Math.max(0, Math.min(100, healthScore)));
+      } catch (err) {
+        console.error("❌ Failed to calculate repo health:", err.response?.data || err.message);
+      }
+    };
+
+    fetchHealthData();
+  }, [selectedRepo, token, setRepoHealth]);
 
   return (
     <div className="min-h-screen bg-gray-950 font-sans text-white">

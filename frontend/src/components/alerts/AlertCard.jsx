@@ -20,9 +20,8 @@ const AlertCard = ({ alert, onMarkAsReviewed }) => {
 
   return (
     <div
-      className={`flex flex-col p-6 border border-gray-700/50 rounded-xl shadow-xl transition duration-150 relative ${
-        alert.reviewed ? "bg-gray-900 opacity-80" : "bg-gray-900/80 hover:border-cyan-500"
-      }`}
+      className={`flex flex-col p-6 border border-gray-700/50 rounded-xl shadow-xl transition duration-150 relative ${alert.reviewed ? "bg-gray-900 opacity-80" : "bg-gray-900/80 hover:border-cyan-500"
+        }`}
     >
       {alert.reviewed && (
         <div className="absolute top-2 left-2 text-green-500 bg-green-900/50 rounded-full p-0.5">
@@ -36,15 +35,15 @@ const AlertCard = ({ alert, onMarkAsReviewed }) => {
 
       {alert.prediction && (
         <div className="text-sm text-cyan-400 mt-2 space-y-1">
-          <p><strong>Why this alert?</strong> {alert.prediction.explanation}</p>
+          <p><strong>Why this alert?</strong> {alert.prediction.explanation || "No explanation provided."}</p>
           <p className="text-gray-400 text-xs">
             Risk Score: {(alert.prediction.riskScore * 100).toFixed(1)}% | Confidence: {(alert.prediction.confidence * 100).toFixed(1)}%
           </p>
           <p className="text-gray-500 text-xs">
-            Impacted Files: {alert.prediction.impactedFiles.join(", ")}
+            Impacted Files: {alert.prediction.impactedFiles?.length > 0 ? alert.prediction.impactedFiles.join(", ") : "None"}
           </p>
           <p className="text-gray-600 text-xs italic">
-            Model: {alert.prediction.model} | Features: {alert.prediction.features.join(", ")}
+            Model: {alert.prediction.model} | Features: {alert.prediction.features?.join(", ") || "N/A"}
           </p>
         </div>
       )}

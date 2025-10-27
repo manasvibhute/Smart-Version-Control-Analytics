@@ -26,7 +26,7 @@ const Alerts = () => {
   const { selectedRepo } = useRepo();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const MIN_RISK_THRESHOLD = 0.6;
+  const MIN_RISK_THRESHOLD = 0.4;
 
   useEffect(() => {
     if (!token) {
@@ -37,6 +37,10 @@ const Alerts = () => {
   useEffect(() => {
     if (!token || !selectedRepo) return;
 
+    console.log("🚀 Sending fetch to /github/alerts");
+    console.log("🔑 Token:", token);
+    console.log("📦 Repo:", selectedRepo.full_name);
+
     setLoading(true);
     axios
       .get("http://localhost:5000/github/alerts", {
@@ -44,6 +48,7 @@ const Alerts = () => {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
+        console.log("Fetched alerts:", res.data.alerts);
         setAlerts(res.data.alerts);
       })
       .catch((err) => {
@@ -61,20 +66,26 @@ const Alerts = () => {
     );
   };
 
-  const filtered = alerts
-    .filter((a) => filter === "All" || a.category === filter)
-    .filter((a) => !hideReviewed || !a.reviewed)
-    .filter((a) => !a.prediction || a.prediction.riskScore >= MIN_RISK_THRESHOLD);
+  const filtered = alerts.filter((a) => {
+    const passesRisk = a.prediction && parseFloat(a.prediction.riskScore) >= MIN_RISK_THRESHOLD;
+    const passesReview = !hideReviewed || !a.reviewed;
+    const matchesCategory = filter === "All" || a.category === filter;
+    return passesRisk && passesReview && matchesCategory;
+  });
 
-  const dynamicCategories = ALERT_CATEGORIES.map((cat) => ({
-    ...cat,
-    count:
-      cat.label === "All"
-        ? alerts.filter((a) => !hideReviewed || !a.reviewed).length
-        : alerts.filter(
-            (a) => a.category === cat.label && (!hideReviewed || !a.reviewed)
-          ).length,
-  }));
+  const dynamicCategories = ALERT_CATEGORIES.map((cat) => {
+    const filteredAlerts = alerts.filter((a) => {
+      const passesRisk = a.prediction && parseFloat(a.prediction.riskScore) >= MIN_RISK_THRESHOLD;
+      const passesReview = !hideReviewed || !a.reviewed;
+      const matchesCategory = cat.label === "All" || a.category === cat.label;
+      return passesRisk && passesReview && matchesCategory;
+    });
+
+    return {
+      ...cat,
+      count: filteredAlerts.length,
+    };
+  });
 
   if (!selectedRepo) {
     return (
@@ -116,8 +127,8 @@ const Alerts = () => {
           </button>
         </div>
 
-        <p className="text-sm text-gray-400 mb-4">
-          Showing alerts with predicted risk ≥ 60%.
+        <p className="text-sm text-gray-400 -mt-10 mb-4 italic">
+          Showing alerts with predicted risk ≥ 40%.
         </p>
 
         {error && (
