@@ -1,8 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import Home from "./pages/Home";
-import ConnectRepository from "./pages/ConnectRepository";
+import Home from "./pages/Home";  
 import Trends from "./pages/Trends";
 import Alerts from "./pages/Alerts";
 import RiskyModules from "./pages/RiskyModules";
@@ -23,7 +22,6 @@ const App = () => (
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/connect-repo" element={<ConnectRepository />} />
           <Route path="/trends" element={
             <ProtectedRoute>
               <Trends />

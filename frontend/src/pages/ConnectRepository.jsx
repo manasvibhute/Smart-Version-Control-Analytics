@@ -1,5 +1,5 @@
 import React from "react";
-import { FiGithub, FiGitlab } from "react-icons/fi";
+import { FiGithub } from "react-icons/fi";
 import { useNavigate } from "react-router-dom"; // added
 import DashboardNavbar from "../components/DashboardNavbar";
 import RepositoryConnectionCard from "../components/connectRepo/RepositoryConnectionCard";
@@ -15,10 +15,8 @@ const ConnectRepository = () => {
     }
   }, [token, navigate]);
   const githubClientId = "Ov23liD61pAdYbyn6Tpg";
-  const gitlabClientId = "YOUR_GITLAB_CLIENT_ID";
 
   const githubRedirectUri = "http://localhost:5173/github-callback";
-  const gitlabRedirectUri = "http://localhost:5173/gitlab-callback";
 
   const [loading, setLoading] = useState(false);
 
@@ -34,12 +32,6 @@ const ConnectRepository = () => {
     }, 500); // 0.5s delay
   };
 
-  const connectGitlab = () => {
-    const scope = "read_user+api";
-    const url = `https://gitlab.com/oauth/authorize?client_id=${gitlabClientId}&redirect_uri=${gitlabRedirectUri}&response_type=code&scope=${scope}`;
-    window.location.href = url;
-  };
-
   return (
     <div className="min-h-screen bg-gray-950 font-sans text-white">
       <DashboardNavbar />
@@ -48,7 +40,7 @@ const ConnectRepository = () => {
         <div className="text-center md:text-left mb-10">
           <h1 className="text-3xl font-bold text-white mb-2">Connect Your Repository</h1>
           <p className="text-gray-400 text-lg">
-            Link your GitHub or GitLab repository to start analyzing your code
+            Link your GitHub repository to start analyzing your code
           </p>
         </div>
 
@@ -58,11 +50,6 @@ const ConnectRepository = () => {
             title="GitHub"
             onConnect={connectGithub} // pass function
             loading={loading}
-          />
-          <RepositoryConnectionCard
-            icon={FiGitlab}
-            title="GitLab"
-            onConnect={connectGitlab} // pass function
           />
         </div>
 

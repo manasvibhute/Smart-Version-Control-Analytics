@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { FiGithub, FiGitBranch, FiGitlab } from "react-icons/fi";
+import { FiGithub, FiGitBranch } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 const GitConnectButton = ({ provider, icon: Icon }) => {
@@ -38,7 +38,6 @@ const Login = () => (
         <h1 className="text-2xl font-bold text-white">Login to SVCA</h1>
       </div>
       <GitConnectButton provider="GitHub" icon={FiGithub} />
-      <GitConnectButton provider="GitLab" icon={FiGitlab} />
     </div>
   </div>
 );

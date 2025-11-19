@@ -5,25 +5,22 @@ import { useRepo } from "../context/RepoContext";
 
 const Logout = () => {
   const { logout } = useContext(AuthContext);
-  const { setSelectedRepo } = useRepo();
+  const { clearRepo } = useRepo();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Clear JWT / AuthContext
+    // 1️⃣ Clear authentication state
     logout();
-    setSelectedRepo(null);
-    // Clear GitHub token from localStorage
+
+    // 2️⃣ Clear selected repo + repo health
+    clearRepo();
+
+    // 3️⃣ Clear GitHub token from localStorage
     localStorage.removeItem("githubAccessToken");
 
-    // Redirect to login page
+    // 4️⃣ Redirect to login page
     navigate("/login", { replace: true });
-
-    // Optional: clear history stack to prevent back navigation
-    window.history.pushState(null, "", "/login");
-    window.onpopstate = () => {
-      window.history.go(1);
-    };
-  }, [logout, navigate, setSelectedRepo]);
+  }, [logout, clearRepo, navigate]);
 
   return <p>Logging out...</p>;
 };

@@ -23,7 +23,18 @@ const options = {
   },
   scales: {
     x: { ticks: { color: "white" }, grid: { color: "rgba(255,255,255,0.1)" } },
-    y: { beginAtZero: true, ticks: { color: "white" }, grid: { color: "rgba(255,255,255,0.1)" } },
+    y: {
+      beginAtZero: true,
+      ticks: {
+        color: "white",
+        stepSize: 1,
+        precision: 0,
+        callback: function (value) {
+          return Number.isInteger(value) ? value : "";
+        },
+      },
+      grid: { color: "rgba(255,255,255,0.1)" },
+    },
   },
 };
 

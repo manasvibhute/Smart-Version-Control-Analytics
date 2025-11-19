@@ -30,12 +30,12 @@ const GitHubCallback = () => {
             navigate("/repos");
           } else {
             console.error("No token received", res.data);
-            navigate("/connect-repo");
+            navigate("/");
           }
         })
         .catch((err) => {
           console.error("Token exchange failed:", err.response?.data || err.message);
-          navigate("/connect-repo");
+          navigate("/");
         });
     }
   }, [location, navigate, login]);

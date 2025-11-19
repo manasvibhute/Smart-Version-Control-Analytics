@@ -22,7 +22,16 @@ const Home = () => {
             title: "Risk Detection",
             description: "Predict merge conflicts and identify bug-prone modules early."
         },
-    ];
+    ]
+
+    const connectGithub = () => {
+        const githubClientId = "Ov23liD61pAdYbyn6Tpg";
+        const githubRedirectUri = "http://localhost:5173/github-callback";
+        const scope = encodeURIComponent("repo user");
+
+        const url = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${githubRedirectUri}&scope=${scope}`;
+        window.location.href = url;
+    };
 
     return (
         <div className="min-h-screen bg-gray-900 font-sans">
@@ -44,14 +53,14 @@ const Home = () => {
 
                     <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
                         {/* Primary Button */}
-                        <Link
-                            to="/connect-repo"
+                        <button
+                            onClick={connectGithub}
                             className="flex items-center justify-center px-8 py-3 text-lg font-semibold text-gray-900 bg-cyan-500 rounded-full shadow-lg hover:bg-cyan-400 transition duration-200 transform hover:scale-105 group"
                         >
                             <FaGithub className="w-5 h-5 mr-3" />
                             Connect GitHub Repository
                             <FiArrowRight className="w-4 h-4 ml-2 opacity-0 transition duration-300 group-hover:opacity-100 group-hover:translate-x-1" />
-                        </Link>
+                        </button>
 
                         {/* Secondary Button */}
                         <button className="px-8 py-3 text-lg font-semibold text-white border-2 border-gray-600 rounded-full hover:border-cyan-500 hover:text-cyan-500 transition duration-200">

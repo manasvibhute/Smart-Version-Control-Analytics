@@ -14,11 +14,20 @@ import { useState, useEffect, useMemo } from "react";
 
 const Trends = () => {
     const { selectedRepo } = useRepo();
+    // 🚫 If no repo is selected, block this page
+    if (!selectedRepo) {
+        return (
+            <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center">
+                <h1 className="text-2xl font-bold mb-2">No Repository Selected</h1>
+                <p className="text-gray-400">Please connect a repository to view analytics.</p>
+            </div>
+        );
+    }
+
     const [commits, setCommits] = useState([]);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(true);
     const [linesData, setLinesData] = useState([]);
-    const [issueData, setIssueData] = useState([]);
     const navigate = useNavigate();
     const token = localStorage.getItem("githubAccessToken");
     const [authorCounts, setAuthorCounts] = useState({});
@@ -78,41 +87,6 @@ const Trends = () => {
                 });
         }
     }, [selectedRepo]);
-
-    useEffect(() => {
-  if (selectedRepo) {
-    console.log("🐞 Fetching issues for:", selectedRepo.full_name);
-
-    axios
-      .get(`https://api.github.com/repos/${selectedRepo.full_name}/issues?state=all&per_page=100`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        console.log("✅ issueData:", res.data);
-
-        if (res.data.length === 0) {
-          console.warn("⚠️ No issues found, injecting dummy data for testing");
-          setIssueData([
-            {
-              created_at: "2025-01-10T00:00:00Z",
-              closed_at: "2025-01-15T00:00:00Z",
-              labels: [{ name: "bug" }],
-            },
-            {
-              created_at: "2025-02-05T00:00:00Z",
-              closed_at: "2025-02-10T00:00:00Z",
-              labels: [{ name: "bug" }],
-            },
-          ]);
-        } else {
-          setIssueData(res.data);
-        }
-      })
-      .catch((err) => {
-        console.error("❌ Issue fetch error:", err);
-      });
-  }
-}, [selectedRepo]);
 
     const fetchCommitDetails = async (sha) => {
         const res = await axios.get(`https://api.github.com/repos/${selectedRepo.full_name}/commits/${sha}`, {
@@ -179,72 +153,6 @@ const Trends = () => {
         console.log("✅ groupedLinesData:", result);
         return Object.values(result);
     }, [linesData]);
-
-    const getMonthLabels = () => {
-        const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const months = new Set();
-        issueData.forEach((issue) => {
-            const date = new Date(issue.created_at);
-            const label = date.toLocaleString("default", { month: "short" });
-            months.add(label);
-        });
-        return monthOrder.filter((m) => months.has(m));
-    };
-
-    const getBugCountsByMonth = (type) => {
-        const counts = {};
-        issueData.forEach((issue) => {
-            const date = new Date(type === "reported" ? issue.created_at : issue.closed_at);
-            if (!date || isNaN(date)) return;
-            const label = date.toLocaleString("default", { month: "short" });
-            counts[label] = (counts[label] || 0) + 1;
-        });
-
-        const labels = getMonthLabels();
-        return labels.map((label) => counts[label] || 0);
-    };
-    console.log("🐞 Trends component rendered, issueData length:", issueData.length);
-    const bugChartData = useMemo(() => {
-        console.log("🐞 bugChartData useMemo triggered");
-
-        if (!issueData || issueData.length === 0) {
-            console.log("⚠️ issueData is empty, skipping bug chart");
-            return { labels: [], datasets: [] };
-        }
-
-        const labels = getMonthLabels();
-        const reported = getBugCountsByMonth("reported");
-        const fixed = getBugCountsByMonth("fixed");
-
-        console.log("✅ Month labels:", labels); // ← ADD HERE
-        console.log("✅ Bugs Reported:", reported); // ← ADD HERE
-        console.log("✅ Bugs Fixed:", fixed);
-
-        const chart = {
-            labels,
-            datasets: [
-                {
-                    label: "Bugs Reported",
-                    data: reported,
-                    borderColor: "#f87171",
-                    backgroundColor: "rgba(248, 113, 113, 0.3)",
-                    fill: true,
-                    tension: 0.4,
-                },
-                {
-                    label: "Bugs Fixed",
-                    data: fixed,
-                    borderColor: "#34d399",
-                    backgroundColor: "rgba(52, 211, 153, 0.3)",
-                    fill: true,
-                    tension: 0.4,
-                },
-            ],
-        };
-        console.log("✅ bugChartData:", chart);
-        return chart;
-    }, [issueData]);
-
     return (
         <div className="min-h-screen bg-gray-950 font-sans text-white">
             <DashboardNavbar />
@@ -256,9 +164,9 @@ const Trends = () => {
                             Long-term insights into developer productivity and repository health
                         </p>
                     </div>
-                    <button 
-                    onClick={() => alert("Export functionality coming soon!")}
-                    className="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition duration-200 flex items-center border border-gray-600">
+                    <button
+                        onClick={() => alert("Export functionality coming soon!")}
+                        className="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded-lg hover:bg-gray-600 transition duration-200 flex items-center border border-gray-600">
                         <FiDownload className="w-4 h-4 mr-2" />
                         Export Report
                     </button>
@@ -288,15 +196,9 @@ const Trends = () => {
                     </ChartCard>
                 </div>
 
-                <div className="mb-8">
-                    <ChartCard title="Bug Frequency Trends" heightClass="h-80">
-                        <div className="flex items-center justify-center h-full text-gray-500">
-                            <BugFrequencyChart data={bugChartData} />
-                        </div>
-                    </ChartCard>
-                </div>
-
-                <KeyMetricsSummary commits={commits} bugChartData={bugChartData} />
+                <KeyMetricsSummary
+                    commits={commits}
+                />
             </main>
         </div>
     );

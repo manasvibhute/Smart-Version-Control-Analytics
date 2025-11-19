@@ -11,6 +11,15 @@ const RiskyModules = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("githubAccessToken");
   const { selectedRepo } = useRepo();
+  // 🚫 If no repo is selected, block this page
+  if (!selectedRepo) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold mb-2">No Repository Selected</h1>
+        <p className="text-gray-400">Please connect a repository to view analytics.</p>
+      </div>
+    );
+  }
   const [commits, setCommits] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
