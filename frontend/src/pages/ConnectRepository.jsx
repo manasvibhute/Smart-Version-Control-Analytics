@@ -16,14 +16,14 @@ const ConnectRepository = () => {
   }, [token, navigate]);
   const githubClientId = "Ov23liD61pAdYbyn6Tpg";
 
-  const githubRedirectUri = "http://localhost:5173/github-callback";
+  const githubRedirectUri = "http://localhost:5000/auth/github/callback";
 
   const [loading, setLoading] = useState(false);
 
   const connectGithub = () => {
     setLoading(true); // show "Connecting..."
 
-    const scope = encodeURIComponent("repo user");
+    const scope = encodeURIComponent("repo read:user security_events");
     const url = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${githubRedirectUri}&scope=${scope}`;
 
     // give React a tick to render the loading message

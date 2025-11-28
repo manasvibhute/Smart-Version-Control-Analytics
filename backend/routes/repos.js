@@ -37,14 +37,11 @@ router.post('/github/:repoId', authMiddleware, async (req, res) => {
     }
 
     const token = req.user.accessToken;
-    if (!token) return res.status(403).json({ error: 'No GitHub access token' });
+    if (!token) return res.status(403).json({ error: "No GitHub access token" });
 
-    // 2️⃣ Fetch repo info from GitHub to get actual owner
     const repoRes = await axios.get(
       `https://api.github.com/repos/${repo.owner.username}/${repo.name}`,
-      {
-        headers: { 'User-Agent': 'SVCA-App', Authorization: `token ${token}` },
-      }
+      { headers: { Authorization: `Bearer ${token}` } }
     );
 
     const realOwnerUsername = repoRes.data.owner.login;

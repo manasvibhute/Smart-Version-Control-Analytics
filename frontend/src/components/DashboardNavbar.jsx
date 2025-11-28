@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FiGithub, FiBell, FiMenu, FiX, FiLogOut } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom"; // <-- import useNavigate
 import { useRepo } from "../context/RepoContext";
+import { useAuth } from "../context/AuthContext";
 
 // --- SVG Icons ---
 const IconLayoutDashboard = (props) => (
@@ -26,6 +27,7 @@ const IconGitBranch = (props) => (
 const Navbarr = () => {
   const { repoHealth } = useRepo();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { username, logout } = useAuth();
   const navigate = useNavigate();
 
   const navLinks = [
@@ -52,13 +54,12 @@ const Navbarr = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            <button className="px-5 py-2.5 text-sm font-medium text-white bg-cyan-600 rounded-lg hover:bg-cyan-500 transition duration-200 flex items-center">
-              <FiGithub className="w-5 h-5 mr-2" /> Connect Repo
-            </button>
             {/* <button className="p-3 rounded-full hover:bg-gray-700 transition duration-200">
               <FiBell className="w-5 h-5 text-white" />
             </button> */}
-            <div className="w-9 h-9 bg-gray-700 rounded-full flex items-center justify-center text-white font-semibold">P</div>
+            <div className="w-9 h-9 bg-gray-700 rounded-full flex items-center justify-center text-white font-semibold">
+              {username ? username.charAt(0).toUpperCase() : "?"}
+            </div>
           </div>
         </div>
       </nav>
@@ -101,7 +102,10 @@ const Navbarr = () => {
           {/* Bottom Section: Logout & Health */}
           <div className="mt-auto flex flex-col space-y-4">
             <button
-              onClick={() => navigate("/")} // <-- navigate to home on logout
+              onClick={() => {
+                logout(); 
+                navigate("/");
+              }} // <-- navigate to home on logout
               className="flex items-center space-x-3 px-4 py-2 w-full rounded-lg hover:bg-gray-700 transition duration-200">
               <FiLogOut />
               <span>Logout</span>

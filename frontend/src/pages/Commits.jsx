@@ -51,18 +51,18 @@ const Commits = () => {
         .then((res) => {
           const transformed = res.data.commits.map((c) => ({
             id: c.sha.slice(0, 7),
-            message: c.commit.message,
-            author: { name: c.commit.author?.name || "Unknown" },
+            message: c.message,
+            author: { name: c.author || "Unknown" },
             files: Array.isArray(c.files) ? c.files.length : 0,
             changes: c.stats
               ? `${c.stats.additions}/${c.stats.deletions}`
               : "0/0",
-            risk: /crash|security|vulnerability|exploit/i.test(c.commit.message)
+            risk: /crash|security|vulnerability|exploit/i.test(c.message)
               ? "High"
-              : /fix|bug|hotfix/i.test(c.commit.message)
+              : /fix|bug|hotfix/i.test(c.message)
                 ? "Medium"
                 : "Low",
-            time: new Date(c.commit.author.date).toLocaleString(),
+            time: new Date(c.date).toLocaleString(),
             branch: c.branch || "main",
           }));
           setCommits(transformed);

@@ -1,46 +1,39 @@
 import React, { useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 
 const GitHubCallback = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  const hasExchanged = useRef(false); // ✅ faster, persistent flag
+  const hasExchanged = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const code = params.get("code");
+    const jwt = params.get("jwt");
+    const accessToken = params.get("accessToken");
 
-    if (code && !hasExchanged.current) {
+    if (jwt && accessToken && !hasExchanged.current) {
       hasExchanged.current = true;
 
-      console.log("Sending code to backend:", code);
+      console.log("JWT:", jwt);
+      console.log("GitHub Access Token:", accessToken);
 
-      axios
-        .post("http://localhost:5000/github/exchange-token", { code })
-        .then((res) => {
-          console.log("Token response:", res.data);
-          const token = res.data.access_token;
-          if (token) {
-            login(token);
-            window.history.replaceState({}, document.title, "/github-callback");
-            console.log("Navigating to /repos");
-            navigate("/repos");
-          } else {
-            console.error("No token received", res.data);
-            navigate("/");
-          }
-        })
-        .catch((err) => {
-          console.error("Token exchange failed:", err.response?.data || err.message);
-          navigate("/");
-        });
+      // Save both
+      localStorage.setItem("jwtToken", jwt);
+      localStorage.setItem("githubAccessToken", accessToken);
+
+      login({ jwt, githubAccessToken: accessToken });
+
+      navigate("/repos");
     }
   }, [location, navigate, login]);
 
-  return <div className="text-white text-center mt-20">Processing GitHub login...</div>;
+  return (
+    <div className="text-white text-center mt-20">
+      Processing GitHub login...
+    </div>
+  );
 };
 
 export default GitHubCallback;

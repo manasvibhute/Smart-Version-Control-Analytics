@@ -26,8 +26,8 @@ const Home = () => {
 
     const connectGithub = () => {
         const githubClientId = "Ov23liD61pAdYbyn6Tpg";
-        const githubRedirectUri = "http://localhost:5173/github-callback";
-        const scope = encodeURIComponent("repo user");
+        const githubRedirectUri = "http://localhost:5000/auth/github/callback";
+        const scope = encodeURIComponent("repo read:user security_events");
 
         const url = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${githubRedirectUri}&scope=${scope}`;
         window.location.href = url;

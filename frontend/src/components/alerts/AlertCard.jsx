@@ -15,8 +15,12 @@ const iconMap = {
   Reviewed: FaCheckCircle,
 };
 
-const AlertCard = ({ alert, onMarkAsReviewed }) => {
+const AlertCard = ({ alert, onMarkAsReviewed, repoFullName }) => {
   const Icon = iconMap[alert.category] || FaExclamationTriangle;
+  const riskPct = alert.prediction ? (alert.prediction.riskScore * 100).toFixed(1) : null;
+  const topFiles = alert.prediction?.riskyFiles?.length
+    ? alert.prediction.riskyFiles.map(r => r.filename)
+    : alert.prediction?.impactedFiles?.slice(0, 3) || [];
 
   return (
     <div
@@ -29,8 +33,8 @@ const AlertCard = ({ alert, onMarkAsReviewed }) => {
         </div>
       )}
 
-      <p className={`text-sm mb-4 ${alert.reviewed ? "text-gray-500" : "text-gray-400"}`}>
-        {alert.details}
+      <p className={`text-sm mb-2 ${alert.reviewed ? "text-gray-500" : "text-gray-200"}`}>
+        {alert.title}
       </p>
 
       {alert.prediction && (
@@ -39,6 +43,19 @@ const AlertCard = ({ alert, onMarkAsReviewed }) => {
           <p className="text-gray-400 text-xs">
             Risk Score: {(alert.prediction.riskScore * 100).toFixed(1)}% | Confidence: {(alert.prediction.confidence * 100).toFixed(1)}%
           </p>
+          {/* Highlight top risky files */}
+          {topFiles.length > 0 && (
+            <div className="text-xs">
+              <span className="text-gray-400">Focus files:</span>
+              <ul className="mt-1 space-y-1">
+                {topFiles.map((f) => (
+                  <li key={f} className="inline-block mr-2 mb-1 px-2 py-1 rounded bg-gray-800 border border-gray-700 text-gray-200">
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <p className="text-gray-500 text-xs">
             Impacted Files: {alert.prediction.impactedFiles?.length > 0 ? alert.prediction.impactedFiles.join(", ") : "None"}
           </p>
@@ -47,6 +64,30 @@ const AlertCard = ({ alert, onMarkAsReviewed }) => {
           </p>
         </div>
       )}
+
+      {/* Suggested Action */}
+      {riskPct && (
+        <div className="mt-3 text-sm text-yellow-400">
+          <strong>Suggested action:</strong>{" "}
+          {riskPct >= 60
+            ? "Run regression tests on dashboard components and review high-churn files."
+            : "Review the diff and test the affected UI flow (Navbar, Alerts, Dashboard)."}
+        </div>
+      )}
+
+      {/* View commit button */}
+      <div className="mt-3">
+        {alert.sha && repoFullName && (
+          <a
+            href={`https://github.com/${repoFullName}/commit/${alert.sha}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block px-3 py-1 text-sm font-medium text-white bg-gray-900/90 border border-gray-500/50 rounded-lg hover:bg-cyan-600 transition duration-200"
+          >
+            View Commit Diff
+          </a>
+        )}
+      </div>
 
       <div className="flex justify-between items-center text-xs text-gray-500 mt-auto pt-4">
         <span>{alert.time}</span>

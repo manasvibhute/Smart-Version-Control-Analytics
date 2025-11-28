@@ -4,7 +4,6 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const axios = require('axios');
-const githubRoutes = require("./routes/github");
 
 const app = express();
 const PORT = process.env.PORT || 5000;

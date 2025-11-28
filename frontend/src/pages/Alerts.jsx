@@ -59,6 +59,7 @@ const Alerts = () => {
       .then((res) => {
         console.log("Fetched alerts:", res.data.alerts);
         setAlerts(res.data.alerts);
+        console.log("🔍 Raw alerts:", res.data.alerts);
       })
       .catch((err) => {
         console.error("Failed to fetch alerts:", err.message);
@@ -76,24 +77,37 @@ const Alerts = () => {
   };
 
   const filtered = alerts.filter((a) => {
-    const passesRisk = a.prediction && parseFloat(a.prediction.riskScore) >= MIN_RISK_THRESHOLD;
+    const score = Number(a.prediction?.riskScore);
+
+    const passesRisk =
+      isNaN(score) || score >= MIN_RISK_THRESHOLD; // FIXED
+
     const passesReview = !hideReviewed || !a.reviewed;
-    const matchesCategory = filter === "All" || a.category === filter;
+
+    const matchesCategory =
+      filter === "All" ||
+      a.category?.toLowerCase() === filter.toLowerCase(); // FIXED
+
     return passesRisk && passesReview && matchesCategory;
   });
 
   const dynamicCategories = ALERT_CATEGORIES.map((cat) => {
     const filteredAlerts = alerts.filter((a) => {
-      const passesRisk = a.prediction && parseFloat(a.prediction.riskScore) >= MIN_RISK_THRESHOLD;
+      const score = Number(a.prediction?.riskScore);
+
+      const passesRisk =
+        isNaN(score) || score >= MIN_RISK_THRESHOLD;
+
       const passesReview = !hideReviewed || !a.reviewed;
-      const matchesCategory = cat.label === "All" || a.category === cat.label;
+
+      const matchesCategory =
+        cat.label === "All" ||
+        a.category?.toLowerCase() === cat.label.toLowerCase();
+
       return passesRisk && passesReview && matchesCategory;
     });
 
-    return {
-      ...cat,
-      count: filteredAlerts.length,
-    };
+    return { ...cat, count: filteredAlerts.length };
   });
 
   if (!selectedRepo) {
@@ -111,7 +125,7 @@ const Alerts = () => {
     <div className="min-h-screen bg-gray-950 font-sans text-white">
       <DashboardNavbar />
 
-      <main className="pt-20 pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="pt-24 pb-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <header className="mb-6">
           <h1 className="text-3xl font-bold text-white">
             Alerts & Predictions for <span className="text-cyan-400">{selectedRepo.full_name}</span>
@@ -149,12 +163,22 @@ const Alerts = () => {
         ) : (
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filtered.map((a) => (
-              <AlertCard key={a.id} alert={a} onMarkAsReviewed={handleMarkAsReviewed} />
+              <AlertCard
+                key={a.id}
+                alert={a}
+                repoFullName={selectedRepo.full_name}
+                onMarkAsReviewed={handleMarkAsReviewed}
+              />
             ))}
             {filtered.length === 0 && (
               <div className="lg:col-span-2 text-center py-10 text-gray-500">
                 <FaExclamationTriangle className="mx-auto mb-2 w-6 h-6 text-yellow-500" />
                 No alerts match the current filter criteria.
+              </div>
+            )}
+            {filtered.length === 0 && alerts.length > 0 && (
+              <div className="lg:col-span-2 text-center py-4 text-yellow-400 text-sm">
+                All alerts are currently hidden due to filters. Try changing your category or showing reviewed alerts.
               </div>
             )}
           </section>

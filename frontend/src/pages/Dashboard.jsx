@@ -100,12 +100,13 @@ const Dashboard = () => {
   }, 0);
 
   const totalBugs = commits.filter((commit) =>
-    commit.commit.message.toLowerCase().includes("fix") ||
-    commit.commit.message.toLowerCase().includes("bug")
+    commit.message.toLowerCase().includes("fix") ||
+    commit.message.toLowerCase().includes("bug")
   ).length;
 
-  const currentWeekCommits = commits.filter(c => isThisWeek(c.commit.author.date)).length;
-  const lastWeekCommits = commits.filter(c => isLastWeek(c.commit.author.date)).length;
+
+  const currentWeekCommits = commits.filter(c => isThisWeek(c.date)).length;
+  const lastWeekCommits = commits.filter(c => isLastWeek(c.date)).length;
 
   const trend = lastWeekCommits > 0
     ? `${Math.round(((currentWeekCommits - lastWeekCommits) / lastWeekCommits) * 100)}%`
@@ -147,20 +148,20 @@ const Dashboard = () => {
   // Chart data
   const dailyCounts = {};
   commits.forEach((commit) => {
-    const date = new Date(commit.commit.author.date).toISOString().split("T")[0];
+    const date = new Date(commit.date).toISOString().split("T")[0];
     dailyCounts[date] = (dailyCounts[date] || 0) + 1;
   });
 
   const chartData = Object.entries(dailyCounts).map(([date, count]) => ({ date, count }));
 
   const commitAlerts = commits
-    .filter(c => /fix|bug|hotfix|crash|error|patch/i.test(c.commit.message))
+    .filter(c => /fix|bug|hotfix|crash|error|patch/i.test(c.message))
     .map((c, index) => ({
       id: index,
       title: "Bug-related commit",
       severity: "Medium",
-      details: c.commit.message,
-      time: new Date(c.commit.author.date).toLocaleString(),
+      details: c.message,
+      time: new Date(c.date).toLocaleString(),
       action: "Inspect",
     }));
 
@@ -193,6 +194,7 @@ const Dashboard = () => {
 
     const fetchHealthData = async () => {
       console.log("✅ Calculating health for:", selectedRepo.full_name);
+
       try {
         const [alertsRes, commitsRes] = await Promise.all([
           axios.get("http://localhost:5000/github/alerts", {
@@ -208,23 +210,37 @@ const Dashboard = () => {
         const alerts = alertsRes.data.alerts || [];
         const commits = commitsRes.data.commits || [];
 
-        const riskyCommits = commits.filter(c => c.riskScore >= 0.6).length;
-        const avgAlertRisk = alerts.length
-          ? alerts.reduce((sum, a) => {
-            const score = parseFloat(a.prediction?.riskScore || 0);
-            return sum + (isNaN(score) ? 0 : score);
-          }, 0) / alerts.length
-          : 0;
-        console.log("🐛 riskyCommits:", riskyCommits);
-        console.log("🐛 avgAlertRisk:", avgAlertRisk);
+        // 1️⃣ Bug-related commits
+        const bugCommits = commits.filter(c =>
+          /fix|bug|error|crash|hotfix|patch/i.test(c.message)
+        ).length;
 
-        const healthScore = Math.round(
-          100 - (riskyCommits * 5 + avgAlertRisk * 30)
-        );
-        console.log("📊 Calculated health score:", healthScore);
-        setRepoHealth(Math.max(0, Math.min(100, healthScore)));
+        // 2️⃣ Alert category counts
+        const mergeAlerts = alerts.filter(a => a.category === "Merge").length;
+        const riskAlerts = alerts.filter(a => a.category === "Risk").length;
+        const productivityAlerts = alerts.filter(a => a.category === "Productivity").length;
+
+        // 3️⃣ Final Health Score Formula
+        let healthScore = 100
+          - (bugCommits * 3)
+          - (mergeAlerts * 4)
+          - (riskAlerts * 5)
+          - (productivityAlerts * 2);
+
+        // Clamp (0–100)
+        healthScore = Math.max(0, Math.min(100, healthScore));
+
+        // Save globally
+        setRepoHealth(healthScore);
+
+        console.log("🐞 bugCommits:", bugCommits);
+        console.log("🔀 mergeAlerts:", mergeAlerts);
+        console.log("⚠️ riskAlerts:", riskAlerts);
+        console.log("📉 productivityAlerts:", productivityAlerts);
+        console.log("📊 FINAL HEALTH:", healthScore);
+
       } catch (err) {
-        console.error("❌ Failed to calculate repo health:", err.response?.data || err.message);
+        console.error("❌ Error calculating repo health:", err.message);
       }
     };
 
@@ -266,7 +282,7 @@ const Dashboard = () => {
             <ul className="space-y-2">
               {commits.slice(0, 5).map((commit) => (
                 <li key={commit.sha} className="text-sm text-gray-300">
-                  <strong>{commit.commit.author.name}</strong>: {commit.commit.message}
+                  <strong>{commit.author}</strong>: {commit.message}
                 </li>
               ))}
             </ul>

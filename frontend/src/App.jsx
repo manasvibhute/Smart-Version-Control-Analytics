@@ -49,7 +49,7 @@ const App = () => (
           } />
           <Route path="/login" element={<Login />} />
           <Route path="/logout" element={<Logout />} />
-          <Route path="/github-callback" element={<GithubCallback />} />
+          <Route path="/auth/github/callback" element={<GithubCallback />} />
           <Route path="/repos" element={
             <ProtectedRoute>
               <RepoList />

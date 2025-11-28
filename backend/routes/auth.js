@@ -60,7 +60,9 @@ router.get('/github/callback', async (req, res) => {
     const token = jwt.sign({ userId: user.id }, JWT_SECRET);
 
     // Redirect to frontend with token
-    res.redirect(`${FRONTEND_URL}/repos?token=${token}`);
+    res.redirect(
+      `${FRONTEND_URL}/auth/github/callback?jwt=${token}&accessToken=${accessToken}`
+    );
   } catch (err) {
     console.error('OAuth Error:', err.response ? err.response.data : err.message);
     res.status(500).send('GitHub OAuth failed');

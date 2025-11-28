@@ -1,4 +1,4 @@
-function predictAlert({ message, files, author, timestamp }) {
+function predictAlert({ message, files, author, timestamp, sha }) {
     const lowerMessage = message.toLowerCase();
     const fileCount = files.length;
 
@@ -17,7 +17,8 @@ function predictAlert({ message, files, author, timestamp }) {
 
     // Simulated ML scoring
     const rawScore = (keywordRisk + fileRisk + authorRisk) / 3;
-    const riskScore = Math.round(rawScore * 100) / 100;
+    let riskScore = Number(rawScore.toFixed(2));
+    if (isNaN(riskScore)) riskScore = 0;   // fallback
 
     console.log("Scoring commit:", message);
     console.log("Risk score:", riskScore);
@@ -33,16 +34,24 @@ function predictAlert({ message, files, author, timestamp }) {
                 ? "Productivity"
                 : "Risk";
 
+    const highRisk = riskScore >= 0.8;
+
     return {
+        id: sha,
+        sha,
         title: `Predicted issue in ${fileCount} files`,
-        category,
-        details: `ML model flagged this commit with ${Math.round(riskScore * 100)}% risk.`,
-        riskScore,
-        confidence: 0.85,
-        model: "commit_alert_v2",
-        features: ["keywordRisk", "fileCount", "authorActivity"],
-        impactedFiles: files,
-        explanation: `Commit message and file count suggest potential ${category.toLowerCase()} issue.`,
+        category, // must be one of: "Merge", "Risk", "Duplicate", "Productivity"
+        reviewed: false,
+        highRisk,
+        prediction: {
+            riskScore, // must be a number, not string
+            confidence: 0.85,
+            model: "commit_alert_v2",
+            explanation: `Commit message and file count suggest potential ${category.toLowerCase()} issue.`,
+            impactedFiles: files.map(f => f.filename),
+            features: ["keywordRisk", "fileCount", "authorActivity"],
+        },
+        time: timestamp,
     };
 }
 

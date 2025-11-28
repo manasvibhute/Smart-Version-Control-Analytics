@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useRepo } from "../context/RepoContext";
+import { useAuth } from "../context/AuthContext";
 
 const RepoList = () => {
   const navigate = useNavigate();
@@ -9,42 +10,58 @@ const RepoList = () => {
   const { selectedRepo, setSelectedRepo } = useRepo();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const [username, setUsername] = useState(null);
+  const { setUsername: setGlobalUsername } = useAuth(); // rename to avoid conflict with local state
   const githubToken = localStorage.getItem("githubAccessToken");
 
   useEffect(() => {
-  if (!githubToken) {
-    navigate("/login");
-    return;
-  }
-
-  const fetchRepos = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get("http://localhost:5000/github/repos", {
-        headers: { Authorization: `Bearer ${githubToken}` },
-      });
-
-      setRepos(res.data.repos);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to fetch repositories");
-    } finally {
-      setLoading(false);
+    if (!githubToken) {
+      navigate("/login");
+      return;
     }
-  };
 
-  fetchRepos();
-}, [githubToken, navigate]);
+    const fetchUserAndRepos = async () => {
+      try {
+        setLoading(true);
 
+        // 🟢 Fetch GitHub user profile
+        const userRes = await axios.get("https://api.github.com/user", {
+          headers: { Authorization: `Bearer ${githubToken}` },
+        });
+        const githubUsername = userRes.data.login;
+
+        setUsername(githubUsername);         // local state for RepoList
+        setGlobalUsername(githubUsername);
+
+        // 🟢 Fetch repos from your backend
+        const repoRes = await axios.get("http://localhost:5000/github/repos", {
+          headers: { Authorization: `Bearer ${githubToken}` },
+        });
+        setRepos(repoRes.data.repos);
+      } catch (err) {
+        console.error(err.response?.data || err.message);
+        setError("Failed to fetch data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserAndRepos();
+  }, [githubToken, navigate]);
 
   if (!githubToken) return <p>Redirecting to login...</p>;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white p-6">
+
       <div className="bg-green-600 text-white px-4 py-2 rounded mb-6">
         Successfully connected to GitHub!
       </div>
+      {username && (
+        <div className="text-white text-lg font-semibold mb-2">
+          Welcome, <span className="text-cyan-400">{username}</span>!
+        </div>
+      )}
 
       {loading && <p>Loading repositories...</p>}
       {error && <p className="text-red-500">{error}</p>}
