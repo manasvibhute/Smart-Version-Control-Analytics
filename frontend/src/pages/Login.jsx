@@ -7,7 +7,7 @@ const GitConnectButton = ({ provider, icon: Icon }) => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
   const githubClientId = "Ov23liD61pAdYbyn6Tpg";
-  const githubRedirectUri = "http://localhost:5000/auth/github/callback";
+  const githubRedirectUri = "https://smart-version-control-analytics.onrender.com/auth/github/callback";
 
   const handleConnect = () => {
   const scope = encodeURIComponent("repo read:user security_events");

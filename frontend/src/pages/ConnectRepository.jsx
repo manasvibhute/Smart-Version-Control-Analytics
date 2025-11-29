@@ -16,7 +16,7 @@ const ConnectRepository = () => {
   }, [token, navigate]);
   const githubClientId = "Ov23liD61pAdYbyn6Tpg";
 
-  const githubRedirectUri = "http://localhost:5000/auth/github/callback";
+  const githubRedirectUri = "https://smart-version-control-analytics.onrender.com/auth/github/callback";
 
   const [loading, setLoading] = useState(false);
 

@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useRepo } from "../context/RepoContext";
 import { useAuth } from "../context/AuthContext";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const RepoList = () => {
   const navigate = useNavigate();
   const [repos, setRepos] = useState([]);
@@ -34,7 +36,7 @@ const RepoList = () => {
         setGlobalUsername(githubUsername);
 
         // 🟢 Fetch repos from your backend
-        const repoRes = await axios.get("http://localhost:5000/github/repos", {
+        const repoRes = await axios.get(`${API}/github/repos`, {
           headers: { Authorization: `Bearer ${githubToken}` },
         });
         setRepos(repoRes.data.repos);

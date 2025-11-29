@@ -9,6 +9,8 @@ import AlertCard from "../components/alerts/AlertCard";
 import AlertSummary from "../components/alerts/AlertSummary";
 import { useRepo } from "../context/RepoContext";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const ALERT_CATEGORIES = [
   { label: "All" },
   { label: "Merge" },
@@ -52,7 +54,7 @@ const Alerts = () => {
 
     setLoading(true);
     axios
-      .get("http://localhost:5000/github/alerts", {
+      .get(`${API}/github/alerts`, {
         params: { repo: selectedRepo.full_name },
         headers: { Authorization: `Bearer ${token}` },
       })

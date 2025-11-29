@@ -11,6 +11,8 @@ import { FaBug } from "react-icons/fa";
 import { useRepo } from "../context/RepoContext";
 import axios from "axios";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("githubAccessToken");
@@ -197,11 +199,11 @@ const Dashboard = () => {
 
       try {
         const [alertsRes, commitsRes] = await Promise.all([
-          axios.get("http://localhost:5000/github/alerts", {
+          axios.get(`${API}/github/commits`, {
             params: { repo: selectedRepo.full_name },
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get("http://localhost:5000/github/commits", {
+          axios.get(`${API}/github/commits`, {
             params: { repo: selectedRepo.full_name },
             headers: { Authorization: `Bearer ${token}` },
           }),

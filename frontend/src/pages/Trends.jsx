@@ -11,6 +11,8 @@ import ContributionPieChart from "../components/trends/ContributionPieChart";
 import KeyMetricsSummary from "../components/trends/KeyMetricsSummary";
 import { useRepo } from "../context/RepoContext"; 
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const Trends = () => {
   const { selectedRepo } = useRepo();
   const navigate = useNavigate();
@@ -44,7 +46,7 @@ const Trends = () => {
     if (selectedRepo) {
       setLoading(true);
       axios
-        .get("http://localhost:5000/github/commits", {
+        .get(`${API}/github/commits`, {
           params: { repo: selectedRepo.full_name },
           headers: { Authorization: `Bearer ${token}` },
         })

@@ -7,6 +7,8 @@ import CommitRiskTable from "../components/Commits/CommitRiskTable";
 import { useRepo } from "../context/RepoContext";
 import axios from "axios";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const Commits = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("githubAccessToken");
@@ -44,7 +46,7 @@ const Commits = () => {
     if (selectedRepo) {
       setLoading(true);
       axios
-        .get("http://localhost:5000/github/commits", {
+        .get(`${API}/github/commits`, {
           params: { repo: selectedRepo.full_name },
           headers: { Authorization: `Bearer ${token}` },
         })

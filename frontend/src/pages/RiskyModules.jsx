@@ -7,6 +7,8 @@ import { useRepo } from "../context/RepoContext";
 import axios from "axios";
 import { useState, useEffect } from "react";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const RiskyModules = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("githubAccessToken");
@@ -61,7 +63,7 @@ const RiskyModules = () => {
     if (selectedRepo) {
       setLoading(true);
       axios
-        .get("http://localhost:5000/github/commits", {
+        .get(`${API}/github/commits`, {
           params: { repo: selectedRepo.full_name },
           headers: { Authorization: `Bearer ${token}` },
         })
