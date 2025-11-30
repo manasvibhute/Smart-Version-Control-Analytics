@@ -63,9 +63,11 @@ const RiskyModules = () => {
     if (selectedRepo) {
       setLoading(true);
       axios
-        .get(`${API}/github/commits`, {
-          params: { repo: selectedRepo.full_name },
-          headers: { Authorization: `Bearer ${token}` },
+        .get(`${API}/commits`, {
+          params: {
+            accessToken: token,
+            repo: selectedRepo.full_name,
+          },
         })
         .then((res) => {
           setCommits(res.data.commits);

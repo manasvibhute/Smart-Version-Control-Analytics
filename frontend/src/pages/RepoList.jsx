@@ -84,8 +84,17 @@ const RepoList = () => {
                 <td className="p-2 border border-gray-700">
                   <button
                     className="bg-cyan-600 px-3 py-1 rounded hover:bg-cyan-500"
-                    onClick={() => {
+                    onClick={async () => {
                       setSelectedRepo(repo);
+
+                      try {
+                        await axios.post(
+                          `${API}/repos/github/${repo.id}?accessToken=${githubToken}`
+                        );
+                      } catch (err) {
+                        console.error("Failed to fetch commits:", err.response?.data || err.message);
+                      }
+
                       navigate("/dashboard");
                     }}
                   >

@@ -48,28 +48,21 @@ const Alerts = () => {
   useEffect(() => {
     if (!token || !selectedRepo) return;
 
-    console.log("🚀 Sending fetch to /github/alerts");
-    console.log("🔑 Token:", token);
-    console.log("📦 Repo:", selectedRepo.full_name);
-
     setLoading(true);
+
     axios
-      .get(`${API}/github/alerts`, {
-        params: { repo: selectedRepo.full_name },
-        headers: { Authorization: `Bearer ${token}` },
+      .get(`${API}/alerts`, {
+        params: {
+          accessToken: token,
+          repo: selectedRepo.full_name,
+        },
       })
-      .then((res) => {
-        console.log("Fetched alerts:", res.data.alerts);
-        setAlerts(res.data.alerts);
-        console.log("🔍 Raw alerts:", res.data.alerts);
-      })
+      .then((res) => setAlerts(res.data.alerts || []))
       .catch((err) => {
-        console.error("Failed to fetch alerts:", err.message);
+        console.error("Failed to fetch alerts:", err.response?.data || err.message);
         setError("Could not load alerts");
       })
-      .finally(() => {
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   }, [token, selectedRepo]);
 
   const handleMarkAsReviewed = (id) => {

@@ -40,24 +40,23 @@ const Dashboard = () => {
   }, [token, navigate]);
 
   useEffect(() => {
-    if (selectedRepo) {
-      setLoading(true);
-      axios
-        .get("http://localhost:5000/github/commits", {
-          params: { repo: selectedRepo.full_name },
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((res) => {
-          setCommits(res.data.commits);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch commits:", err.response?.data || err.message);
-          setError("Could not load commit history");
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
+    if (!selectedRepo) return;
+
+    setLoading(true);
+
+    axios
+      .get(`${API}/commits`, {
+        params: {
+          accessToken: token,
+          repo: selectedRepo.full_name,
+        },
+      })
+      .then((res) => setCommits(res.data.commits || []))
+      .catch((err) => {
+        console.error("Failed to fetch commits:", err.response?.data || err.message);
+        setError("Could not load commit history");
+      })
+      .finally(() => setLoading(false));
   }, [selectedRepo]);
 
   if (!selectedRepo) {
@@ -170,8 +169,11 @@ const Dashboard = () => {
   useEffect(() => {
     if (selectedRepo) {
       axios
-        .get(`https://api.github.com/repos/${selectedRepo.full_name}/issues?state=open&labels=bug`, {
-          headers: { Authorization: `Bearer ${token}` },
+        .get(`${API}/issues`, {
+          params: {
+            accessToken: token,
+            repo: selectedRepo.full_name,
+          },
         })
         .then((res) => setIssues(res.data))
         .catch((err) => console.error("Failed to fetch issues:", err.response?.data || err.message));
@@ -199,13 +201,17 @@ const Dashboard = () => {
 
       try {
         const [alertsRes, commitsRes] = await Promise.all([
-          axios.get(`${API}/github/commits`, {
-            params: { repo: selectedRepo.full_name },
-            headers: { Authorization: `Bearer ${token}` },
+          axios.get(`${API}/alerts`, {
+            params: {
+              accessToken: token,
+              repo: selectedRepo.full_name,
+            },
           }),
-          axios.get(`${API}/github/commits`, {
-            params: { repo: selectedRepo.full_name },
-            headers: { Authorization: `Bearer ${token}` },
+          axios.get(`${API}/commits`, {
+            params: {
+              accessToken: token,
+              repo: selectedRepo.full_name,
+            },
           }),
         ]);
 

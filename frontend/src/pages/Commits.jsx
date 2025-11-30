@@ -43,40 +43,39 @@ const Commits = () => {
   }, [token, navigate]);
 
   useEffect(() => {
-    if (selectedRepo) {
-      setLoading(true);
-      axios
-        .get(`${API}/github/commits`, {
-          params: { repo: selectedRepo.full_name },
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((res) => {
-          const transformed = res.data.commits.map((c) => ({
-            id: c.sha.slice(0, 7),
-            message: c.message,
-            author: { name: c.author || "Unknown" },
-            files: Array.isArray(c.files) ? c.files.length : 0,
-            changes: c.stats
-              ? `${c.stats.additions}/${c.stats.deletions}`
-              : "0/0",
-            risk: /crash|security|vulnerability|exploit/i.test(c.message)
-              ? "High"
-              : /fix|bug|hotfix/i.test(c.message)
-                ? "Medium"
-                : "Low",
-            time: new Date(c.date).toLocaleString(),
-            branch: c.branch || "main",
-          }));
-          setCommits(transformed);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch commits:", err.response?.data || err.message);
-          setError("Could not load commit history");
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
+    if (!selectedRepo) return;
+
+    setLoading(true);
+
+    axios
+      .get(`${API}/commits`, {
+        params: {
+          accessToken: token,
+          repo: selectedRepo.full_name,
+        },
+      })
+      .then((res) => {
+        const transformed = res.data.commits.map((c) => ({
+          id: c.sha.slice(0, 7),
+          message: c.message,
+          author: { name: c.author || "Unknown" },
+          files: Array.isArray(c.files) ? c.files.length : 0,
+          changes: c.stats ? `${c.stats.additions}/${c.stats.deletions}` : "0/0",
+          risk: /crash|security|vulnerability|exploit/i.test(c.message)
+            ? "High"
+            : /fix|bug|hotfix/i.test(c.message)
+              ? "Medium"
+              : "Low",
+          time: new Date(c.date).toLocaleString(),
+          branch: c.branch || "main",
+        }));
+        setCommits(transformed);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch commits:", err.response?.data || err.message);
+        setError("Could not load commit history");
+      })
+      .finally(() => setLoading(false));
   }, [selectedRepo]);
 
   const authors = commits.map((c) => c.author?.name).filter(Boolean);

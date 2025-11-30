@@ -9,7 +9,7 @@ import CommitsOverTimeChart from "../components/trends/CommitsOverTimeChart";
 import LinesAddedDeletedChart from "../components/trends/LinesAddedDeletedChart";
 import ContributionPieChart from "../components/trends/ContributionPieChart";
 import KeyMetricsSummary from "../components/trends/KeyMetricsSummary";
-import { useRepo } from "../context/RepoContext"; 
+import { useRepo } from "../context/RepoContext";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -46,9 +46,11 @@ const Trends = () => {
     if (selectedRepo) {
       setLoading(true);
       axios
-        .get(`${API}/github/commits`, {
-          params: { repo: selectedRepo.full_name },
-          headers: { Authorization: `Bearer ${token}` },
+        .get(`${API}/commits`, {
+          params: {
+            accessToken: token,
+            repo: selectedRepo.full_name,
+          },
         })
         .then((res) => {
           console.log("✅ API response:", res.data);
@@ -96,12 +98,13 @@ const Trends = () => {
   }, [selectedRepo]);
 
   const fetchCommitDetails = async (sha) => {
-    const res = await axios.get(
-      `https://api.github.com/repos/${selectedRepo.full_name}/commits/${sha}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const res = await axios.get(`${API}/commit-details`, {
+      params: {
+        accessToken: token,
+        repo: selectedRepo.full_name,
+        sha,
+      },
+    });
     return res.data;
   };
 
