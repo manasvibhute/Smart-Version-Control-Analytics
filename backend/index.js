@@ -11,8 +11,9 @@ const PORT = process.env.PORT || 5000;
 // ---------- Middleware ----------
 app.use(cors({
   origin: [
-    'http://localhost:5173', 
-    'https://smart-version-control-analytics-9d5t.onrender.com'
+    'http://localhost:5173',
+    'https://smart-version-control-analytics-9d5t.onrender.com', // frontend
+    'https://smart-version-control-analytics.onrender.com'       // backend
   ],
   credentials: true
 }));
@@ -44,9 +45,6 @@ app.use('/pull_requests', prRoutes);
 
 const authRoutes = require('./routes/auth');
 app.use('/auth', authRoutes);
-
-const githubRoute = require("./routes/github");
-app.use("/github", githubRoute);
 
 // ---------- GitHub OAuth Routes ----------
 
