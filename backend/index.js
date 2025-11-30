@@ -64,23 +64,32 @@ app.get('/auth/github/callback', async (req, res) => {
   const client_id = process.env.GITHUB_CLIENT_ID;
   const client_secret = process.env.GITHUB_CLIENT_SECRET;
 
+  console.log("🔁 GitHub redirected back with code:", code);
+
+  if (!code) {
+    console.log("❌ No code received");
+    return res.status(400).send("No code from GitHub");
+  }
+
   try {
     const tokenResponse = await axios.post(
-      'https://github.com/login/oauth/access_token',
+      "https://github.com/login/oauth/access_token",
+      { client_id, client_secret, code },
       {
-        client_id,
-        client_secret,
-        code
-      },
-      { headers: { Accept: 'application/json' } }
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "SVCA-App"
+        }
+      }
     );
 
+    console.log("🔑 GitHub token response:", tokenResponse.data);
+
     const access_token = tokenResponse.data.access_token;
-    console.log("GitHub Access Token:", access_token);
 
     if (!access_token) {
-      console.log("❌ No access token returned");
-      return res.status(400).json({ error: "No access token" });
+      console.log("❌ No access token in response");
+      return res.status(400).send("No access token from GitHub");
     }
 
     const frontend = process.env.FRONTEND_URL;
@@ -88,9 +97,10 @@ app.get('/auth/github/callback', async (req, res) => {
 
   } catch (error) {
     console.error("❌ GitHub OAuth Callback Error:", error.response?.data || error);
-    return res.status(500).json({ error: "GitHub OAuth failed" });
+    return res.status(500).send("GitHub OAuth failed");
   }
 });
+
 
 // ---------- Test endpoint ----------
 app.get('/', (req, res) => res.send('SVCA Backend Running ✅'));
