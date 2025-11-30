@@ -11,7 +11,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 // Step 1: Redirect user to GitHub login
 router.get('/github', (req, res) => {
   const client_id = process.env.GITHUB_CLIENT_ID;
-  const redirect_uri = 'http://localhost:5000/auth/github/callback';
+  const redirect_uri = process.env.GITHUB_REDIRECT_URI;
   const scope = 'repo read:user';
   const url = `https://github.com/login/oauth/authorize?client_id=${client_id}&redirect_uri=${redirect_uri}&scope=${scope}`;
   res.redirect(url);
