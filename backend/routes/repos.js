@@ -8,11 +8,12 @@ const authMiddleware = require('../middleware/auth');
 console.log('repos.js loaded');
 
 // --- GET all GitHub repos of authenticated user ---
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const token = req.user.accessToken;
+    const token = req.query.accessToken;  // <- coming from frontend
+
     if (!token) {
-      return res.status(403).json({ error: "No GitHub access token" });
+      return res.status(400).json({ error: "Missing GitHub access token" });
     }
 
     const githubRes = await axios.get("https://api.github.com/user/repos", {

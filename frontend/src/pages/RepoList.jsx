@@ -36,10 +36,9 @@ const RepoList = () => {
         setGlobalUsername(githubUsername);
 
         // 🟢 Fetch repos from your backend
-        const repoRes = await axios.get(`${API}/github/repos`, {
-          headers: { Authorization: `Bearer ${githubToken}` },
-        });
-        setRepos(repoRes.data.repos);
+        const repoRes = await axios.get(`${API}/repos?accessToken=${githubToken}`);
+
+        setRepos(repoRes.data); // backend directly returns GitHub repo list
       } catch (err) {
         console.error(err.response?.data || err.message);
         setError("Failed to fetch data");
