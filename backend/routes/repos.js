@@ -7,6 +7,27 @@ const authMiddleware = require('../middleware/auth');
 
 console.log('repos.js loaded');
 
+// --- GET all GitHub repos of authenticated user ---
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const token = req.user.accessToken;
+    if (!token) {
+      return res.status(403).json({ error: "No GitHub access token" });
+    }
+
+    const githubRes = await axios.get("https://api.github.com/user/repos", {
+      headers: { Authorization: `token ${token}` }
+    });
+
+    res.json(githubRes.data);
+
+  } catch (err) {
+    console.error("❌ Error fetching repos:", err.response?.data || err.message);
+    res.status(500).json({ error: "Failed to fetch repos" });
+  }
+});
+
+
 // --- GET all commits in DB for authenticated user ---
 router.get('/commits', authMiddleware, async (req, res) => {
   try {
