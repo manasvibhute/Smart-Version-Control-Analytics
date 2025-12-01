@@ -30,6 +30,12 @@ app.use((req, res, next) => {
   next();
 });
 
+const issuesRouter = require('./routes/issues');
+const alertsRouter = require('./routes/alerts');
+
+app.use('/issues', issuesRouter);
+app.use('/alerts', alertsRouter);
+
 // ---------- Import existing routes ----------
 const userRoutes = require('./routes/users');
 app.use('/users', userRoutes);

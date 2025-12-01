@@ -45,7 +45,7 @@ const Dashboard = () => {
     setLoading(true);
 
     axios
-      .get(`${API}/commits`, {
+      .get(`${API}/commits/github`, {
         params: {
           accessToken: token,
           repo: selectedRepo.full_name,
@@ -59,16 +59,6 @@ const Dashboard = () => {
       .finally(() => setLoading(false));
   }, [selectedRepo]);
 
-  if (!selectedRepo) {
-    return (
-      <div className="min-h-screen bg-gray-950 text-white p-6">
-        <DashboardNavbar />
-        <p className="mt-20 text-center text-gray-400">
-          No repository selected. Please go to <strong>/repos</strong> and choose one.
-        </p>
-      </div>
-    );
-  }
 
   // Helper functions
   const isThisWeek = (dateStr) => {
@@ -201,21 +191,13 @@ const Dashboard = () => {
 
       try {
         const [alertsRes, commitsRes] = await Promise.all([
-          axios.get(`${API}/alerts`, {
-            params: {
-              accessToken: token,
-              repo: selectedRepo.full_name,
-            },
-          }),
-          axios.get(`${API}/commits`, {
-            params: {
-              accessToken: token,
-              repo: selectedRepo.full_name,
-            },
-          }),
+          axios.get(`${API}/alerts`, { params: { accessToken: token, repo: selectedRepo.full_name } }),
+          axios.get(`${API}/commits/github`, { params: { accessToken: token, repo: selectedRepo.full_name } })
         ]);
 
         const alerts = alertsRes.data.alerts || [];
+        setAlerts(alerts);
+
         const commits = commitsRes.data.commits || [];
 
         // 1️⃣ Bug-related commits
@@ -294,6 +276,14 @@ const Dashboard = () => {
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+        {/* Recent Alerts */}
+        {allAlerts.length > 0 && (
+          <div className="mb-8">
+            <ChartContainer title="Recent Alerts">
+              <RecentAlertsList alerts={allAlerts} />
+            </ChartContainer>
           </div>
         )}
       </main>

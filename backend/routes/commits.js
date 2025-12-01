@@ -32,45 +32,74 @@ router.post('/', async (req, res) => {
   }
 });
 
+// 🔧 GET commits from GitHub using accessToken and repo name
+router.get('/github', async (req, res) => {
+  const { accessToken, repo } = req.query;
+
+  if (!accessToken || !repo) {
+    return res.status(400).json({ error: 'Missing accessToken or repo' });
+  }
+
+  try {
+    const url = `https://api.github.com/repos/${repo}/commits`;
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    const commits = response.data.map(c => ({
+      sha: c.sha,
+      message: c.commit.message,
+      author: c.commit.author?.name || 'Unknown',
+      date: c.commit.author?.date || new Date(),
+      stats: c.stats || {},
+    }));
+
+    res.json({ commits });
+  } catch (err) {
+    console.error('❌ GitHub fetch error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'Failed to fetch commits from GitHub' });
+  }
+});
+
 // ✅ Fetch commits directly from GitHub API and save
 router.post('/github/:repoId', async (req, res) => {
-    const { repoId } = req.params;
+  const { repoId } = req.params;
 
-    try {
-        const repo = await prisma.repository.findUnique({
-            where: { id: parseInt(repoId) },
-        });
+  try {
+    const repo = await prisma.repository.findUnique({
+      where: { id: parseInt(repoId) },
+    });
 
-        if (!repo) return res.status(400).json({ error: 'Repository not found' });
+    if (!repo) return res.status(400).json({ error: 'Repository not found' });
 
-        const url = `https://api.github.com/repos/${repo.ownerName}/${repo.name}/commits`;
-        console.log('Fetching commits from:', url);
+    const url = `https://api.github.com/repos/${repo.ownerName}/${repo.name}/commits`;
+    console.log('Fetching commits from:', url);
 
-        // For public repos, you can fetch without token:
-        const response = await axios.get(url);
+    // For public repos, you can fetch without token:
+    const response = await axios.get(url);
 
-        const commits = response.data.map(c => ({
-            sha: c.sha,
-            message: c.commit.message,
-            repositoryId: repo.id,
-            author: c.commit.author?.name || 'Unknown',
-            date: c.commit.author?.date || new Date(),
-        }));
+    const commits = response.data.map(c => ({
+      sha: c.sha,
+      message: c.commit.message,
+      repositoryId: repo.id,
+      author: c.commit.author?.name || 'Unknown',
+      date: c.commit.author?.date || new Date(),
+    }));
 
-        for (const c of commits) {
-            await prisma.commit.upsert({
-                where: { sha: c.sha },
-                update: {},
-                create: c,
-            });
-        }
-
-        console.log(`✅ ${commits.length} commits saved for repo: ${repo.name}`);
-        res.json(commits);
-    } catch (err) {
-        console.error('❌ Error fetching commits:', err.response?.data || err.message);
-        res.status(500).json({ error: 'Failed to fetch commits' });
+    for (const c of commits) {
+      await prisma.commit.upsert({
+        where: { sha: c.sha },
+        update: {},
+        create: c,
+      });
     }
+
+    console.log(`✅ ${commits.length} commits saved for repo: ${repo.name}`);
+    res.json(commits);
+  } catch (err) {
+    console.error('❌ Error fetching commits:', err.response?.data || err.message);
+    res.status(500).json({ error: 'Failed to fetch commits' });
+  }
 });
 
 
