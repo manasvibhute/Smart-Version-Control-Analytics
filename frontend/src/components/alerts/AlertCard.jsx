@@ -34,14 +34,15 @@ const AlertCard = ({ alert, onMarkAsReviewed, repoFullName }) => {
       )}
 
       <p className={`text-sm mb-2 ${alert.reviewed ? "text-gray-500" : "text-gray-200"}`}>
-        {alert.title}
+        {alert.title || "Untitled Alert"}
       </p>
 
       {alert.prediction && (
         <div className="text-sm text-cyan-400 mt-2 space-y-1">
           <p><strong>Why this alert?</strong> {alert.prediction.explanation || "No explanation provided."}</p>
           <p className="text-gray-400 text-xs">
-            Risk Score: {(alert.prediction.riskScore * 100).toFixed(1)}% | Confidence: {(alert.prediction.confidence * 100).toFixed(1)}%
+            Risk Score: {typeof alert.prediction?.riskScore === "number" ? (alert.prediction.riskScore * 100).toFixed(1) : "N/A"}%
+            Confidence: {typeof alert.prediction?.confidence === "number" ? (alert.prediction.confidence * 100).toFixed(1) : "N/A"}%
           </p>
           {/* Highlight top risky files */}
           {topFiles.length > 0 && (
@@ -90,7 +91,7 @@ const AlertCard = ({ alert, onMarkAsReviewed, repoFullName }) => {
       </div>
 
       <div className="flex justify-between items-center text-xs text-gray-500 mt-auto pt-4">
-        <span>{alert.time}</span>
+        <span>{alert.time || "Unknown time"}</span>
         {alert.reviewed ? (
           <span className="flex items-center text-green-500">
             <FaCheckCircle className="w-4 h-4 mr-1" /> Reviewed

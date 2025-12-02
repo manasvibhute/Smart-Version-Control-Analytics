@@ -36,6 +36,8 @@ const alertsRouter = require('./routes/alerts');
 app.use('/issues', issuesRouter);
 app.use('/alerts', alertsRouter);
 
+const riskRoutes = require("./routes/risk");
+app.use("/", riskRoutes);
 // ---------- Import existing routes ----------
 const userRoutes = require('./routes/users');
 app.use('/users', userRoutes);
