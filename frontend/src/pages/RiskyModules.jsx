@@ -24,6 +24,7 @@ const RiskyModules = () => {
   }
   const [commits, setCommits] = useState([]);
   const [error, setError] = useState("");
+  const [riskyFiles, setRiskyFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const topFiles = useMemo(() => {
     const riskyFiles = {};
@@ -87,6 +88,17 @@ const RiskyModules = () => {
         });
     }
   }, [selectedRepo]);
+
+  useEffect(() => {
+    axios.get(`${API}/risky-modules`, {
+      params: { accessToken: token, repo: selectedRepo.full_name }
+    })
+      .then(res => {
+        console.log("Risky files response:", res.data);
+        setRiskyFiles(res.data.riskyFiles || []);
+      })
+      .catch(err => console.error("Risky modules error:", err));
+  }, [token, selectedRepo]);
 
   return (
     <div className="min-h-screen bg-gray-950 font-sans text-white">
