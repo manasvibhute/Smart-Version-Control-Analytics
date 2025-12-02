@@ -31,7 +31,7 @@ const Commits = () => {
   const [selectedAuthor, setSelectedAuthor] = useState("All Authors");
   const [selectedBranch, setSelectedBranch] = useState("All Branches");
   const [selectedTime, setSelectedTime] = useState("All Time");
-
+  const [page, setPage] = useState(1);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedRisk, setSelectedRisk] = useState("All Risks");
   const [selectedSize, setSelectedSize] = useState("All Sizes");
@@ -44,23 +44,26 @@ const Commits = () => {
 
   useEffect(() => {
     if (!selectedRepo) return;
-
     setLoading(true);
 
-    axios
-      .get(`${API}/commits`, {
-        params: {
-          accessToken: token,
-          repo: selectedRepo.full_name,
-        },
-      })
+    axios.get(`${API}/commits/github`, {
+      params: {
+        accessToken: token,
+        repo: selectedRepo.full_name,
+        page,
+        per_page: 20
+      },
+    })
       .then((res) => {
-        const transformed = res.data.commits.map((c) => ({
+        const transformed = (res.data.commits || []).map((c) => ({
           id: c.sha.slice(0, 7),
           message: c.message,
           author: { name: c.author || "Unknown" },
-          files: Array.isArray(c.files) ? c.files.length : 0,
-          changes: c.stats ? `${c.stats.additions}/${c.stats.deletions}` : "0/0",
+          files: c.filesCount || 0, // backend now returns filesCount
+          changes:
+            c.stats && c.stats.additions !== undefined
+              ? `${c.stats.additions}/${c.stats.deletions}`
+              : "0/0",
           risk: /crash|security|vulnerability|exploit/i.test(c.message)
             ? "High"
             : /fix|bug|hotfix/i.test(c.message)
@@ -76,7 +79,7 @@ const Commits = () => {
         setError("Could not load commit history");
       })
       .finally(() => setLoading(false));
-  }, [selectedRepo]);
+  }, [selectedRepo, page]);
 
   const authors = commits.map((c) => c.author?.name).filter(Boolean);
   const uniqueAuthors = ["All Authors", ...new Set(authors)];
@@ -191,11 +194,35 @@ const Commits = () => {
           </div>
         )}
 
-        {loading && <p className="text-gray-400">Loading commits...</p>}
-        {error && <p className="text-red-500">{error}</p>}
-
-        {/* Commit Risk Table */}
-        <CommitRiskTable commits={filteredCommits} />
+        {loading ? (
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-12 bg-gray-800 rounded-lg animate-pulse" />
+            ))}
+          </div>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : (
+          <>
+            <CommitRiskTable commits={filteredCommits} />
+            {/* Pagination controls go right after the table */}
+            <div className="flex justify-between mt-4">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                className="px-3 py-1 bg-gray-700 rounded disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage(page + 1)}
+                className="px-3 py-1 bg-gray-700 rounded"
+              >
+                Next
+              </button>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
