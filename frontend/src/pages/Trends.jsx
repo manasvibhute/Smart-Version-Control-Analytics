@@ -46,7 +46,7 @@ const Trends = () => {
     if (selectedRepo) {
       setLoading(true);
       axios
-        .get(`${API}/commits`, {
+        .get(`${API}/commits/github`, {
           params: {
             accessToken: token,
             repo: selectedRepo.full_name,
