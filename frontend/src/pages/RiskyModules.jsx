@@ -41,29 +41,6 @@ const RiskyModules = () => {
       </div>
     );
   }
-  useEffect(() => {
-    if (selectedRepo) {
-      setLoading(true);
-      axios
-        .get(`${API}/commits`, {
-          params: {
-            accessToken: token,
-            repo: selectedRepo.full_name,
-          },
-        })
-        .then((res) => {
-          setCommits(res.data.commits);
-          setError(""); // clear error on success
-        })
-        .catch((err) => {
-          console.error("Commit fetch error:", err); // 🔍 log full error
-          setError("Failed to load commits");         // 🔴 show red message
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
-  }, [selectedRepo]);
 
   useEffect(() => {
     axios.get(`${API}/risky-modules`, {
@@ -90,7 +67,6 @@ const RiskyModules = () => {
 
         <div className="mb-6">
           {loading && <p className="text-gray-400">Loading risky files...</p>}
-          {error && <p className="text-red-500">{error}</p>}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
