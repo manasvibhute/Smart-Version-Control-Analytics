@@ -99,7 +99,7 @@ const Trends = () => {
   }, [selectedRepo]);
 
   const fetchCommitDetails = async (sha) => {
-    const res = await axios.get(`${API}/commit-details`, {
+    const res = await axios.get(`${API}/commits/commit-details`, {
       params: {
         accessToken: token,
         repo: selectedRepo.full_name,
