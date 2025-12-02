@@ -53,9 +53,11 @@ const RiskyModules = () => {
         })
         .then((res) => {
           setCommits(res.data.commits);
+          setError(""); // clear error on success
         })
         .catch((err) => {
-          setError("Failed to load commits");
+          console.error("Commit fetch error:", err); // 🔍 log full error
+          setError("Failed to load commits");         // 🔴 show red message
         })
         .finally(() => {
           setLoading(false);
