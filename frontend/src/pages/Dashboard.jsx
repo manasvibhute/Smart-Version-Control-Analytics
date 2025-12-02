@@ -209,16 +209,25 @@ const Dashboard = () => {
         const mergeAlerts = alerts.filter(a => a.category === "Merge").length;
         const riskAlerts = alerts.filter(a => a.category === "Risk").length;
         const productivityAlerts = alerts.filter(a => a.category === "Productivity").length;
+        // ✅ New formula
+        const totalCommitsCount = commits.length || 1; // avoid divide by zero
+        const totalAlertsCount = alerts.length || 1;
 
-        // 3️⃣ Final Health Score Formula
+        // Ratios instead of raw counts
+        const bugRatio = bugCommits / totalCommitsCount;
+        const mergeRatio = mergeAlerts / totalAlertsCount;
+        const riskRatio = riskAlerts / totalAlertsCount;
+        const productivityRatio = productivityAlerts / totalAlertsCount;
+
+        // Weighted penalties
         let healthScore = 100
-          - (bugCommits * 3)
-          - (mergeAlerts * 4)
-          - (riskAlerts * 5)
-          - (productivityAlerts * 2);
+          - (bugRatio * 40)          // bug density
+          - (mergeRatio * 20)        // merge issues
+          - (riskRatio * 30)         // risky alerts
+          - (productivityRatio * 10); // productivity alerts
 
         // Clamp (0–100)
-        healthScore = Math.max(0, Math.min(100, healthScore));
+        healthScore = Math.max(0, Math.min(100, Math.round(healthScore)));
 
         // Save globally
         setRepoHealth(healthScore);

@@ -22,35 +22,9 @@ const RiskyModules = () => {
       </div>
     );
   }
-  const [commits, setCommits] = useState([]);
   const [error, setError] = useState("");
   const [riskyFiles, setRiskyFiles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const topFiles = useMemo(() => {
-    const riskyFiles = {};
-
-    if (!Array.isArray(commits)) return [];
-
-    commits.forEach((commit) => {
-      const files = Array.isArray(commit.files) ? commit.files : [];
-      files.forEach((file) => {
-        if (file?.filename) {
-          riskyFiles[file.filename] = (riskyFiles[file.filename] || 0) + 1;
-        }
-      });
-    });
-
-    return Object.entries(riskyFiles)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([filename, count]) => ({
-        filename,
-        commits: count,
-        risk: Math.min(100, count * 10),
-        authors: [],
-        modified: "recently",
-      }));
-  }, [commits]);
 
   useEffect(() => {
     if (!token) {
@@ -119,10 +93,11 @@ const RiskyModules = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <RiskHeatmap modules={topFiles} />
+            <RiskHeatmap modules={riskyFiles} />
+
           </div>
           <div className="lg:col-span-1">
-            <TopRiskyFilesList files={topFiles} />
+            <TopRiskyFilesList files={riskyFiles} />
           </div>
         </div>
       </main>
