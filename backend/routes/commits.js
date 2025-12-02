@@ -41,11 +41,16 @@ router.get('/github', async (req, res) => {
     return res.status(400).json({ error: 'Missing accessToken or repo' });
   }
 
+  const authHeader = accessToken.startsWith("gho_")
+  ? `token ${accessToken}`
+  : `Bearer ${accessToken}`;
+
+  console.log("🔐 Using auth header:", authHeader);
   try {
     // 1. Fetch commits list with pagination
     const url = `https://api.github.com/repos/${repo}/commits?page=${page}&per_page=${per_page}`;
     const response = await axios.get(url, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { Authorization: authHeader }
     });
 
     if (!Array.isArray(response.data)) {
@@ -55,7 +60,7 @@ router.get('/github', async (req, res) => {
 
     // 2. Fetch branches for branch detection
     const branchesRes = await axios.get(`https://api.github.com/repos/${repo}/branches`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { Authorization: authHeader }
     });
     const branches = branchesRes.data;
 
@@ -63,7 +68,7 @@ router.get('/github', async (req, res) => {
     const commits = await Promise.all(response.data.map(async (c) => {
       const detail = await axios.get(
         `https://api.github.com/repos/${repo}/commits/${c.sha}`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+        { headers: { Authorization: authHeader } }
       );
 
       const branch = branches.find(b => b.commit.sha === c.sha)?.name || "main";

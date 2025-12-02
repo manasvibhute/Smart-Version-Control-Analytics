@@ -28,8 +28,11 @@ const RiskyModules = () => {
   const riskyFiles = {};
 
   commits.forEach((commit) => {
-    commit.files?.forEach((file) => {
-      riskyFiles[file.filename] = (riskyFiles[file.filename] || 0) + 1;
+    const files = Array.isArray(commit.files) ? commit.files : [];
+    files.forEach((file) => {
+      if (file?.filename) {
+        riskyFiles[file.filename] = (riskyFiles[file.filename] || 0) + 1;
+      }
     });
   });
 
