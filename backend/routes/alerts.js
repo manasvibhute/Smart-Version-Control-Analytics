@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const axios = require('axios');
+const { predictAlert } = require('../ml/predictor')
 
-// 🔧 GET alerts (placeholder logic)
 router.get('/', async (req, res) => {
   const { accessToken, repo } = req.query;
 
@@ -10,12 +11,31 @@ router.get('/', async (req, res) => {
   }
 
   try {
-    // Replace this with real logic later
-    const alerts = [
-      { id: 1, category: "Merge", message: "Merge conflict detected" },
-      { id: 2, category: "Risk", message: "Risky file modified" },
-      { id: 3, category: "Productivity", message: "Low commit activity this week" }
-    ];
+    const response = await axios.get(`https://api.github.com/repos/${repo}/commits`, {
+      headers: { Authorization: `token ${accessToken}` },
+      params: { per_page: 20 } // limit for performance
+    });
+
+    const commits = response.data;
+
+    const alerts = [];
+
+    for (const commit of commits) {
+      const sha = commit.sha;
+      const message = commit.commit.message;
+      const author = commit.author?.login || commit.commit.author?.name || "unknown";
+      const timestamp = commit.commit.author?.date;
+
+      // Fetch commit details to get changed files
+      const commitDetails = await axios.get(`https://api.github.com/repos/${repo}/commits/${sha}`, {
+        headers: { Authorization: `token ${accessToken}` }
+      });
+
+      const files = commitDetails.data.files || [];
+
+      const alert = predictAlert({ message, files, author, timestamp, sha });
+      if (alert) alerts.push(alert);
+    }
 
     res.json({ alerts });
   } catch (err) {

@@ -1,6 +1,7 @@
 // routes/risk.js
 const express = require("express");
 const router = express.Router();
+const axios = require("axios");
 
 router.get("/risky-modules", async (req, res) => {
   const { accessToken, repo } = req.query;
@@ -9,16 +10,63 @@ router.get("/risky-modules", async (req, res) => {
     return res.status(400).json({ error: "Missing accessToken or repo" });
   }
 
-  // 🔧 Mock risky files for testing
-  const riskyFiles = [
-    { filename: "src/components/Dashboard.jsx", riskScore: 0.72 },
-    { filename: "src/utils/api.js", riskScore: 0.65 },
-    { filename: "src/hooks/useAlerts.js", riskScore: 0.61 },
-    { filename: "src/pages/Trends.jsx", riskScore: 0.59 },
-    { filename: "src/styles/theme.css", riskScore: 0.55 },
-  ];
+  try {
+    // Step 1: Fetch recent commits
+    const commitsResponse = await axios.get(`https://api.github.com/repos/${repo}/commits`, {
+      headers: { Authorization: `token ${accessToken}` },
+      params: { per_page: 30 } // fetch 30 commits for analysis
+    });
 
-  res.json({ riskyFiles });
+    const commits = commitsResponse.data;
+
+    // Step 2: Track file stats
+    const fileStats = {};
+
+    for (const commit of commits) {
+      const sha = commit.sha;
+      const message = commit.commit.message.toLowerCase();
+
+      // Fetch commit details (changed files)
+      const detailsResponse = await axios.get(`https://api.github.com/repos/${repo}/commits/${sha}`, {
+        headers: { Authorization: `token ${accessToken}` }
+      });
+
+      const files = detailsResponse.data.files || [];
+
+      for (const f of files) {
+        if (!fileStats[f.filename]) {
+          fileStats[f.filename] = { changes: 0, deletions: 0, additions: 0, bugFixes: 0 };
+        }
+
+        fileStats[f.filename].changes += 1;
+        fileStats[f.filename].deletions += f.deletions;
+        fileStats[f.filename].additions += f.additions;
+
+        if (message.includes("fix") || message.includes("bug") || message.includes("error")) {
+          fileStats[f.filename].bugFixes += 1;
+        }
+      }
+    }
+
+    // Step 3: Compute risk scores
+    const riskyFiles = Object.entries(fileStats).map(([filename, stats]) => {
+      const riskScore = (
+        stats.changes * 0.4 +
+        stats.deletions * 0.2 +
+        stats.bugFixes * 0.4
+      ) / 10; // normalize
+      return { filename, riskScore: Number(riskScore.toFixed(2)) };
+    });
+
+    // Step 4: Sort and return top 5
+    riskyFiles.sort((a, b) => b.riskScore - a.riskScore);
+    const topFiles = riskyFiles.slice(0, 5);
+
+    res.json({ riskyFiles: topFiles });
+  } catch (err) {
+    console.error("❌ Risky modules error:", err.message);
+    res.status(500).json({ error: "Failed to compute risky modules" });
+  }
 });
 
 module.exports = router;
