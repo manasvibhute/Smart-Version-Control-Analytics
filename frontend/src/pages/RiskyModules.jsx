@@ -25,27 +25,31 @@ const RiskyModules = () => {
   const [commits, setCommits] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const riskyFiles = {};
+  const topFiles = useMemo(() => {
+    const riskyFiles = {};
 
-  commits.forEach((commit) => {
-    const files = Array.isArray(commit.files) ? commit.files : [];
-    files.forEach((file) => {
-      if (file?.filename) {
-        riskyFiles[file.filename] = (riskyFiles[file.filename] || 0) + 1;
-      }
+    if (!Array.isArray(commits)) return [];
+
+    commits.forEach((commit) => {
+      const files = Array.isArray(commit.files) ? commit.files : [];
+      files.forEach((file) => {
+        if (file?.filename) {
+          riskyFiles[file.filename] = (riskyFiles[file.filename] || 0) + 1;
+        }
+      });
     });
-  });
 
-  const topFiles = Object.entries(riskyFiles || {})
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([filename, count]) => ({
-      filename,
-      commits: count,
-      risk: Math.min(100, count * 10), // basic risk score
-      authors: [], // placeholder for future enhancement
-      modified: "recently", // placeholder
-    }));
+    return Object.entries(riskyFiles)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([filename, count]) => ({
+        filename,
+        commits: count,
+        risk: Math.min(100, count * 10),
+        authors: [],
+        modified: "recently",
+      }));
+  }, [commits]);
 
   useEffect(() => {
     if (!token) {

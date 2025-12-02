@@ -54,29 +54,30 @@ const Trends = () => {
         })
         .then((res) => {
           console.log("✅ API response:", res.data);
-          setCommits(res.data.commits);
 
-          // Count commits per author
+          // Ensure commits is always an array
+          const commitList = Array.isArray(res.data?.commits) ? res.data.commits : [];
+          setCommits(commitList);
+
+          // Count commits per author safely
           const counts = {};
-          res.data.commits.forEach((commit) => {
+          commitList.forEach((commit) => {
             const author = commit.author || "Unknown";
             counts[author] = (counts[author] || 0) + 1;
           });
+
           console.log("✅ authorCounts:", counts);
           setAuthorCounts(counts);
 
           // Fetch commit details for lines added/deleted
-          const commitList = Array.isArray(res.data.commits)
-            ? res.data.commits
-            : [];
           Promise.all(
             commitList.slice(0, 30).map((c) => fetchCommitDetails(c.sha))
           )
             .then((details) => {
               const transformed = details.map((c) => ({
-                name: c.commit.author.name,
-                added: c.stats.additions,
-                deleted: c.stats.deletions,
+                name: c?.commit?.author?.name || "Unknown",
+                added: c?.stats?.additions || 0,
+                deleted: c?.stats?.deletions || 0,
               }));
               console.log("✅ linesData transformed:", transformed);
               setLinesData(transformed);
@@ -110,12 +111,15 @@ const Trends = () => {
 
   const commitsByAuthor = useMemo(() => {
     const result = {};
-    commits.forEach((commit) => {
-      const author = commit.author || "Unknown";
-      const date = new Date(commit.date).toISOString().split("T")[0];
-      if (!result[author]) result[author] = {};
-      result[author][date] = (result[author][date] || 0) + 1;
-    });
+    if (Array.isArray(commits)) {
+      commits.forEach((commit) => {
+
+        const author = commit.author || "Unknown";
+        const date = new Date(commit.date).toISOString().split("T")[0];
+        if (!result[author]) result[author] = {};
+        result[author][date] = (result[author][date] || 0) + 1;
+      });
+    }
     console.log("✅ commitsByAuthor:", result);
     return result;
   }, [commits]);
@@ -133,7 +137,10 @@ const Trends = () => {
     return flattened;
   }, [commitsByAuthor]);
 
+
   const reshapedData = useMemo(() => {
+    if (!Array.isArray(commitsOverTimeData)) return [];
+
     const grouped = {};
     commitsOverTimeData.forEach(({ author, date, count }) => {
       if (!grouped[date]) grouped[date] = { date };
@@ -147,20 +154,21 @@ const Trends = () => {
       });
     });
 
-    const result = Object.values(grouped);
-    console.log("✅ reshapedData:", result);
-    return result;
+    return Object.values(grouped);
   }, [commitsOverTimeData]);
 
   const groupedLinesData = useMemo(() => {
     const result = {};
-    linesData.forEach(({ name, added, deleted }) => {
-      if (!result[name]) {
-        result[name] = { name, added: 0, deleted: 0 };
-      }
-      result[name].added += added;
-      result[name].deleted += deleted;
-    });
+    if (Array.isArray(linesData)) {
+      linesData.forEach(({ name, added, deleted }) => {
+
+        if (!result[name]) {
+          result[name] = { name, added: 0, deleted: 0 };
+        }
+        result[name].added += added;
+        result[name].deleted += deleted;
+      });
+    }
     console.log("✅ groupedLinesData:", result);
     return Object.values(result);
   }, [linesData]);
