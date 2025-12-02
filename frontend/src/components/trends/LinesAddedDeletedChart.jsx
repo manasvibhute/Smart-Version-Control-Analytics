@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 
 const LinesAddedDeletedChart = ({ data }) => {
-    const maxBarHeight = Math.max(...data.map(d => d.added + d.deleted), 1000);
+    const maxBarHeight = data.length > 0
+        ? Math.max(...data.map(d => d.added + d.deleted), 1000)
+        : 1000;
     const [hovered, setHovered] = useState(null);
 
     return (
@@ -21,7 +23,7 @@ const LinesAddedDeletedChart = ({ data }) => {
                     <div
                         key={index}
                         className="relative flex h-full items-end space-x-1 group"
-                        style={{ width: `${100 / data.length - 2}%` }}
+                        style={{ width: data.length > 0 ? `${100 / data.length - 2}%` : "0%" }}
                         onMouseEnter={() => setHovered(item)}
                         onMouseLeave={() => setHovered(null)}
                     >
@@ -55,11 +57,11 @@ const LinesAddedDeletedChart = ({ data }) => {
             {/* X-axis names */}
             <div className="absolute bottom-10 left-10 right-0 flex justify-around text-xs text-gray-400">
                 {data.map((item, index) => (
-                    <span key={index}>{item.name.split(" ")[0]}.</span>
+                    <span key={index}>{item?.name?.split(" ")[0] || "?"}.</span>
                 ))}
             </div>
 
-            {/* Legend inside container */}
+            {/* Legend */}
             <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-4 text-xs text-gray-300">
                 <span className="flex items-center">
                     <span className="w-2 h-2 bg-green-400 rounded-full mr-1"></span>Lines Added

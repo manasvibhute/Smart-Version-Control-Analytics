@@ -42,8 +42,8 @@ router.get('/github', async (req, res) => {
   }
 
   const authHeader = accessToken.startsWith("gho_")
-  ? `token ${accessToken}`
-  : `Bearer ${accessToken}`;
+    ? `token ${accessToken}`
+    : `Bearer ${accessToken}`;
 
   console.log("🔐 Using auth header:", authHeader);
   try {
@@ -86,9 +86,18 @@ router.get('/github', async (req, res) => {
 
     res.json({ commits, page: Number(page), per_page: Number(per_page) });
   } catch (err) {
-    console.error('❌ GitHub fetch error:', err.response?.data || err.message);
+    const status = err.response?.status;
+    const message = err.response?.data?.message || err.message;
+
+    if (status === 401) {
+      console.warn("🚫 GitHub token unauthorized:", message);
+      return res.status(403).json({ error: "GitHub token expired or unauthorized. Please re-authenticate." });
+    }
+
+    console.error('❌ GitHub fetch error:', message);
     res.status(500).json({ error: 'Failed to fetch commits from GitHub' });
   }
+
 });
 
 // ✅ Fetch commits directly from GitHub API and save
@@ -132,5 +141,39 @@ router.post('/github/:repoId', async (req, res) => {
   }
 });
 
+// ✅ GET single commit details from GitHub
+router.get('/commit-details', async (req, res) => {
+  const { accessToken, repo, sha } = req.query;
+
+  if (!accessToken || !repo || !sha) {
+    return res.status(400).json({ error: 'Missing required parameters' });
+  }
+
+  const authHeader = accessToken.startsWith("gho_")
+    ? `token ${accessToken}`
+    : `Bearer ${accessToken}`;
+
+  try {
+    const response = await axios.get(
+      `https://api.github.com/repos/${repo}/commits/${sha}`,
+      { headers: { Authorization: authHeader } }
+    );
+
+    res.json(response.data);
+  } catch (err) {
+    const status = err.response?.status;
+    const message = err.response?.data?.message || err.message;
+
+    if (status === 404) {
+      return res.status(404).json({ error: "Commit not found" });
+    }
+    if (status === 401) {
+      return res.status(403).json({ error: "GitHub token expired or unauthorized" });
+    }
+
+    console.error("❌ Error fetching commit details:", message);
+    res.status(500).json({ error: "Failed to fetch commit details" });
+  }
+});
 
 module.exports = router;
