@@ -11,25 +11,6 @@ const Navbar = () => {
             Smart Version Control Analytics
           </span>
         </div>
-
-        {/* Right side — Buttons */}
-        <div className="flex items-center space-x-4">
-          {/* Login button navigates to /login */}
-          <Link
-            to="/login"
-            className="text-gray-300 hover:text-cyan-400 font-medium transition duration-200"
-          >
-            Login
-          </Link>
-
-          {/* Get Started button navigates to /signup */}
-          <Link
-            to="/signup"
-            className="px-5 py-2 bg-cyan-500 text-gray-900 font-semibold rounded-full hover:bg-cyan-400 transition duration-200"
-          >
-            Get Started
-          </Link>
-        </div>
       </div>
     </nav>
   );
