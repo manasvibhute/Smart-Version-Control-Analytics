@@ -6,12 +6,11 @@ const RiskHeatmap = ({ modules }) => {
   return (
     <div className="grid grid-cols-5 gap-2">
       {modules.map((module, index) => {
-        const color =
-          module.risk >= 80
-            ? "bg-red-600"
-            : module.risk >= 50
-              ? "bg-yellow-600"
-              : "bg-green-600";
+        // ✅ Cap risk at 60
+        const cappedRisk = Math.min(60, module.risk ?? 50);
+
+        // ✅ Only green and yellow (no red)
+        const color = cappedRisk >= 50 ? "bg-yellow-600" : "bg-green-600";
 
         return (
           <div
@@ -24,7 +23,7 @@ const RiskHeatmap = ({ modules }) => {
               {module.filename}
             </div>
 
-            {/* ✅ Tooltip goes right here */}
+            {/* ✅ Tooltip */}
             {hoveredModule?.filename === module.filename && (
               <div className="absolute z-10 -top-8 bg-gray-700 text-white text-xs px-2 py-1 rounded-md shadow-lg whitespace-nowrap">
                 {module.bugFixes} risky commits
