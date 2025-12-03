@@ -31,16 +31,6 @@ const RiskyModules = () => {
       navigate("/login", { replace: true }); // redirect if not logged in
     }
   }, [token, navigate]);
-  if (!selectedRepo) {
-    return (
-      <div className="min-h-screen bg-gray-950 text-white p-6">
-        <DashboardNavbar />
-        <p className="mt-20 text-center text-gray-400">
-          No repository selected. Please go to <strong>/repos</strong> and choose one.
-        </p>
-      </div>
-    );
-  }
 
   useEffect(() => {
     axios.get(`${API}/risky-modules`, {
@@ -49,8 +39,12 @@ const RiskyModules = () => {
       .then(res => {
         console.log("Risky files response:", res.data);
         setRiskyFiles(res.data.riskyFiles || []);
+        setLoading(false);
       })
-      .catch(err => console.error("Risky modules error:", err));
+      .catch(err => {
+        console.error("Risky modules error:", err);
+        setLoading(false); // ✅ add this too
+      });
   }, [token, selectedRepo]);
 
   return (
@@ -68,6 +62,11 @@ const RiskyModules = () => {
         <div className="mb-6">
           {loading && <p className="text-gray-400">Loading risky files...</p>}
         </div>
+        {!loading && riskyFiles.length === 0 && (
+          <p className="text-yellow-400 text-sm mt-4">
+            No risky modules detected for this repository.
+          </p>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">

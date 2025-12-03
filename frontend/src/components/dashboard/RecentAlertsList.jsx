@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import { FaArrowRight } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 const RecentAlertsList = ({ alerts }) => {
   const navigate = useNavigate();
+  const [reviewedIds, setReviewedIds] = useState([]);
 
+  const handleReview = (id) => {
+    setReviewedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  };
   return (
     <div className="mt-8">
       <div className="flex justify-between items-center mb-4">
@@ -19,6 +23,7 @@ const RecentAlertsList = ({ alerts }) => {
       <div className="space-y-4">
         {alerts
           .filter(alert => alert && alert.title && alert.details && alert.time)
+          .slice(0, 3)
           .map(alert => (
             <div
               key={alert.id}
@@ -28,11 +33,12 @@ const RecentAlertsList = ({ alerts }) => {
                 <h4 className="text-base font-semibold text-white">
                   {alert.title}
                   <span
-                    className={`text-xs ml-2 px-2 py-0.5 rounded-full ${
-                      alert.severity === "High"
+                    className={`text-xs ml-2 px-2 py-0.5 rounded-full ${alert.severity === "High"
                         ? "bg-red-900/40 text-red-400"
-                        : "bg-yellow-900/40 text-yellow-400"
-                    }`}
+                        : alert.severity === "Medium"
+                          ? "bg-yellow-900/40 text-yellow-400"
+                          : "bg-green-900/40 text-green-400"
+                      }`}
                   >
                     {alert.severity}
                   </span>
@@ -56,9 +62,18 @@ const RecentAlertsList = ({ alerts }) => {
                 )}
                 <p className="text-xs text-gray-500 mt-1">{alert.time}</p>
               </div>
-              <button className="px-3 py-1 text-sm font-medium text-white bg-cyan-500 rounded-lg hover:bg-cyan-500 transition duration-200">
-                {alert.action}
-              </button>
+              {reviewedIds.includes(alert.id) ? (
+                <span className="text-green-400 text-sm font-medium flex items-center">
+                  ✅ Reviewed
+                </span>
+              ) : (
+                <button
+                  onClick={() => handleReview(alert.id)}
+                  className="px-3 py-1 text-sm font-medium text-white bg-cyan-500 rounded-lg hover:bg-cyan-400 transition duration-200"
+                >
+                  Review
+                </button>
+              )}
             </div>
           ))}
       </div>

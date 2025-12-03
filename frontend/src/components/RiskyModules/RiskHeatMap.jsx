@@ -7,11 +7,11 @@ const RiskHeatmap = ({ modules }) => {
     <div className="grid grid-cols-5 gap-2">
       {modules.map((module, index) => {
         const color =
-          module.risk > 80
+          module.risk >= 80
             ? "bg-red-600"
-            : module.risk > 60
-            ? "bg-yellow-600"
-            : "bg-green-600";
+            : module.risk >= 50
+              ? "bg-yellow-600"
+              : "bg-green-600";
 
         return (
           <div
@@ -24,9 +24,10 @@ const RiskHeatmap = ({ modules }) => {
               {module.filename}
             </div>
 
+            {/* ✅ Tooltip goes right here */}
             {hoveredModule?.filename === module.filename && (
               <div className="absolute z-10 -top-8 bg-gray-700 text-white text-xs px-2 py-1 rounded-md shadow-lg whitespace-nowrap">
-                {module.commits} risky commits
+                {module.bugFixes} risky commits
               </div>
             )}
           </div>
