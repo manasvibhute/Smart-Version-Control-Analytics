@@ -4,8 +4,10 @@ import FeatureCard from "../components/home/FeatureCard";
 import { FiHeart, FiBarChart2, FiAlertTriangle, FiArrowRight } from "react-icons/fi";
 import { FaGithub } from 'react-icons/fa';
 import { Link } from "react-router-dom";
+import React, { useState } from "react"; // add useState
 
 const Home = () => {
+    const [showDemoModal, setShowDemoModal] = useState(false);
     const features = [
         {
             icon: FiHeart,
@@ -63,7 +65,10 @@ const Home = () => {
                         </button>
 
                         {/* Secondary Button */}
-                        <button className="px-8 py-3 text-lg font-semibold text-white border-2 border-gray-600 rounded-full hover:border-cyan-500 hover:text-cyan-500 transition duration-200">
+                        <button
+                            onClick={() => setShowDemoModal(true)}
+                            className="px-8 py-3 text-lg font-semibold text-white border-2 border-gray-600 rounded-full hover:border-cyan-500 hover:text-cyan-500 transition duration-200"
+                        >
                             Use Demo Repository
                         </button>
                     </div>
@@ -80,6 +85,22 @@ const Home = () => {
                         />
                     ))}
                 </div>
+                {showDemoModal && (
+                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+                        <div className="bg-gray-800 rounded-xl shadow-lg p-8 max-w-sm w-full text-center">
+                            <h2 className="text-2xl font-bold text-cyan-400 mb-4">Feature Coming Soon 🚀</h2>
+                            <p className="text-gray-300 mb-6">
+                                The demo repository option will be available in a future update.
+                            </p>
+                            <button
+                                onClick={() => setShowDemoModal(false)}
+                                className="px-6 py-2 text-sm font-medium text-white bg-cyan-500 rounded-lg hover:bg-cyan-400 transition duration-200"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                )}
             </main>
 
             <footer className="py-6 text-center text-gray-500 text-sm">
