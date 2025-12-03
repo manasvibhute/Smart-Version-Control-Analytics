@@ -1,10 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import Navbar from "../components/home/Navbar";
 import FeatureCard from "../components/home/FeatureCard";
 import { FiHeart, FiBarChart2, FiAlertTriangle, FiArrowRight } from "react-icons/fi";
-import { FaGithub } from 'react-icons/fa';
+import { FaGithub } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import React, { useState } from "react"; // add useState
 
 const Home = () => {
     const [showDemoModal, setShowDemoModal] = useState(false);
