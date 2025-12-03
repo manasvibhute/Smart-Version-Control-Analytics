@@ -3,12 +3,8 @@ import { FaUser, FaClock, FaCodeBranch } from "react-icons/fa";
 
 const TopRiskyFilesList = ({ files, stats }) => {
   const RiskItem = ({ file }) => {
-    const riskColor =
-      file.risk > 80
-        ? "bg-red-500"
-        : file.risk > 60
-          ? "bg-yellow-400"
-          : "bg-green-400";
+    const cappedRisk = Math.min(60, file.risk ?? 50);
+    const riskColor = cappedRisk >= 50 ? "bg-yellow-400" : "bg-green-400";
 
     return (
       <div className="p-4 border-b border-gray-700/50 last:border-b-0 hover:bg-gray-700/30 transition duration-150 rounded-lg">
@@ -16,7 +12,7 @@ const TopRiskyFilesList = ({ files, stats }) => {
         <div className="flex justify-between items-center mb-1">
           <h4 className="text-sm font-medium text-white truncate pr-2">{file.filename}</h4>
           <span className={`text-lg font-bold ${riskColor.replace("bg", "text")}`}>
-            {file.risk ?? 50}%
+            {cappedRisk}%
           </span>
         </div>
 
@@ -40,7 +36,7 @@ const TopRiskyFilesList = ({ files, stats }) => {
         <div className="mt-3 w-full h-1 bg-gray-800 rounded-full overflow-hidden">
           <div
             className={`${riskColor} h-full`}
-            style={{ width: `${file.risk}%` }}
+            style={{ width: `${cappedRisk}%` }}
           ></div>
         </div>
       </div>
