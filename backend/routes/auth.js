@@ -4,9 +4,40 @@ const axios = require('axios');
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken'); // <-- added
 const prisma = new PrismaClient();
+const addAllRepos = require('../add_all_repos');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+
+// Manual sync route
+router.post('/sync-repos', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'Missing Authorization header' });
+
+    const token = authHeader.split(' ')[1];
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const userId = decoded.userId;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.accessToken) {
+      return res.status(404).json({ error: 'User not found or missing access token' });
+    }
+
+    await addAllRepos(prisma, user.id, user.accessToken);
+    res.json({ message: 'Repo sync triggered successfully' });
+  } catch (err) {
+    console.error('❌ Manual sync error:', err.message);
+    res.status(500).json({ error: 'Failed to sync repos' });
+  }
+});
+
 
 // Step 1: Redirect user to GitHub login
 router.get('/github', (req, res) => {
@@ -17,10 +48,8 @@ router.get('/github', (req, res) => {
   res.redirect(url);
 });
 
-// Step 2: Callback
 router.get('/github/callback', async (req, res) => {
   const code = req.query.code;
-  console.log('Received code:', code);
 
   try {
     const tokenRes = await axios.post(
@@ -33,8 +62,6 @@ router.get('/github/callback', async (req, res) => {
       { headers: { Accept: 'application/json' } }
     );
 
-    console.log('Token Response:', tokenRes.data);
-
     const accessToken = tokenRes.data.access_token;
     if (!accessToken) return res.status(500).send('GitHub OAuth failed: no access token');
 
@@ -42,9 +69,6 @@ router.get('/github/callback', async (req, res) => {
       headers: { Authorization: `token ${accessToken}` }
     });
 
-    console.log('GitHub User:', userRes.data);
-
-    // Upsert user in DB
     const user = await prisma.user.upsert({
       where: { username: userRes.data.login },
       update: { accessToken, githubId: userRes.data.id.toString() },
@@ -56,13 +80,14 @@ router.get('/github/callback', async (req, res) => {
       }
     });
 
-    // Generate JWT (no expiry)
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET);
+    // 🔑 Trigger repo sync in background
+    addAllRepos(prisma, user.id, accessToken).catch(err => {
+      console.error("Repo sync failed:", err);
+    });
 
-    // Redirect to frontend with token
-    res.redirect(
-      `${FRONTEND_URL}/auth/github/callback?jwt=${token}&accessToken=${accessToken}`
-    );
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET);
+  res.redirect(`${FRONTEND_URL}/auth/github/callback?jwt=${token}&accessToken=${accessToken}`);
+
   } catch (err) {
     console.error('OAuth Error:', err.response ? err.response.data : err.message);
     res.status(500).send('GitHub OAuth failed');

@@ -1,10 +1,7 @@
 // add_all_repos.js
-require('dotenv').config();
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
 const axios = require('axios');
 
-async function addAllRepos(ownerId, accessToken) {
+async function addAllRepos(prisma, ownerId, accessToken) {
   console.log("🚀 addAllRepos() STARTED for owner:", ownerId);
 
   try {
@@ -87,9 +84,6 @@ async function addAllRepos(ownerId, accessToken) {
 
   } catch (err) {
     console.error("❌ addAllRepos error:", err.response?.data || err.message);
-  } finally {
-    await prisma.$disconnect();
-    console.log("🔌 Prisma disconnected");
   }
 }
 
