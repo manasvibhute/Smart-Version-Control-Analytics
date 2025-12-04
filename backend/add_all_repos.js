@@ -4,64 +4,55 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const axios = require('axios');
 
-// ⚡ Replace with your GitHub personal access token
-const GITHUB_ACCESS_TOKEN = process.env.GITHUB_ACCESS_TOKEN;
-
-// Get ownerId dynamically from command line argument
-const ownerId = parseInt(process.argv[2]);
-if (!ownerId) {
-  console.error("Usage: node add_all_repos.js <ownerId>");
-  process.exit(1);
-}
-
-async function main() {
+async function addAllRepos(ownerId, accessToken) {
   try {
-    // 1️⃣ Fetch all repos you have access to (owned + collaborated)
-    const res = await axios.get('https://api.github.com/user/repos?per_page=100', {
-      headers: {
-        'User-Agent': 'SVCA-App',
-        Authorization: `token ${GITHUB_ACCESS_TOKEN}`,
-      },
-    });
+    const res = await axios.get(
+      "https://api.github.com/user/repos?per_page=100",
+      {
+        headers: {
+          "User-Agent": "SVCA-App",
+          Authorization: `token ${accessToken}`,
+        },
+      }
+    );
 
     const repos = res.data;
-    console.log(`Found ${repos.length} repos accessible by this user`);
 
     for (const r of repos) {
       const repoName = r.name;
       const realOwner = r.owner.login;
 
-      // 2️⃣ Check if repo already exists, then create or update
-let repo = await prisma.repository.findFirst({ where: { name: repoName } });
+      let repo = await prisma.repository.findFirst({
+        where: { name: repoName },
+      });
 
-if (repo) {
-  // Update existing repo
-  repo = await prisma.repository.update({
-    where: { id: repo.id },
-    data: { githubOwnerUsername: realOwner, ownerId }
-  });
-} else {
-  // Create new repo
-  repo = await prisma.repository.create({
-    data: { name: repoName, githubOwnerUsername: realOwner, ownerId }
-  });
-}
+      if (repo) {
+        repo = await prisma.repository.update({
+          where: { id: repo.id },
+          data: { githubOwnerUsername: realOwner, ownerId },
+        });
+      } else {
+        repo = await prisma.repository.create({
+          data: {
+            name: repoName,
+            githubOwnerUsername: realOwner,
+            ownerId,
+          },
+        });
+      }
 
-
-      console.log(`✅ Repo added: ${repoName}, real owner: ${realOwner}`);
-
-      // 3️⃣ Fetch commits
+      // Fetch commits
       const commitsRes = await axios.get(
         `https://api.github.com/repos/${realOwner}/${repoName}/commits`,
         {
           headers: {
-            'User-Agent': 'SVCA-App',
-            Authorization: `token ${GITHUB_ACCESS_TOKEN}`,
+            "User-Agent": "SVCA-App",
+            Authorization: `token ${accessToken}`,
           },
         }
       );
 
-      const commits = commitsRes.data.map(c => ({
+      const commits = commitsRes.data.map((c) => ({
         sha: c.sha,
         message: c.commit.message,
         repositoryId: repo.id,
@@ -76,16 +67,15 @@ if (repo) {
           create: c,
         });
       }
-
-      console.log(`✅ ${commits.length} commits saved for ${repoName}`);
     }
 
-    console.log('🎉 All repos added and commits fetched!');
+    return true;
   } catch (err) {
-    console.error('❌ Error:', err.response?.data || err.message);
+    console.error("❌ addAllRepos error:", err.response?.data || err.message);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-main();
+// Export function
+module.exports = addAllRepos;
