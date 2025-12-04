@@ -7,6 +7,10 @@ const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+// Prisma + sync script imports
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+const addAllRepos = require('./add_all_repos');   // <– YOU MUST EXPORT FUNCTION
 
 // ---------- Middleware ----------
 app.use(cors({
@@ -72,37 +76,54 @@ app.get('/auth/github/callback', async (req, res) => {
 
   console.log("🔁 GitHub redirected back with code:", code);
 
-  if (!code) {
-    console.log("❌ No code received");
-    return res.status(400).send("No code from GitHub");
-  }
+  if (!code) return res.status(400).send("No code from GitHub");
 
   try {
     const tokenResponse = await axios.post(
       "https://github.com/login/oauth/access_token",
       { client_id, client_secret, code },
       {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": "SVCA-App"
-        }
+        headers: { Accept: "application/json", "User-Agent": "SVCA-App" }
       }
     );
 
-    console.log("🔑 GitHub token response:", tokenResponse.data);
-
     const access_token = tokenResponse.data.access_token;
+    if (!access_token) return res.status(400).send("No access token");
 
-    if (!access_token) {
-      console.log("❌ No access token in response");
-      return res.status(400).send("No access token from GitHub");
-    }
+    console.log("🔑 Access Token:", access_token);
+
+    const userRes = await axios.get("https://api.github.com/user", {
+      headers: { Authorization: `token ${access_token}` }
+    });
+
+    const ghUser = userRes.data;
+
+    let user = await prisma.user.upsert({
+      where: { githubId: ghUser.id },
+      update: {
+        username: ghUser.login,
+        avatarUrl: ghUser.avatar_url,
+        accessToken: access_token
+      },
+      create: {
+        githubId: ghUser.id,
+        username: ghUser.login,
+        avatarUrl: ghUser.avatar_url,
+        accessToken: access_token
+      }
+    });
+
+    console.log("👤 User saved:", user);
+
+    console.log("🚀 Syncing GitHub Repos + Commits…");
+    await addAllRepos(user.id, access_token);
+    console.log("✅ Sync complete");
 
     const frontend = process.env.FRONTEND_URL;
-    return res.redirect(`${frontend}/dashboard?token=${access_token}`);
+    return res.redirect(`${frontend}/dashboard?userId=${user.id}`);
 
   } catch (error) {
-    console.error("❌ GitHub OAuth Callback Error:", error.response?.data || error);
+    console.error("❌ OAuth Callback Error:", error.response?.data || error);
     return res.status(500).send("GitHub OAuth failed");
   }
 });
