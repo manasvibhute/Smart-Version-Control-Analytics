@@ -5,6 +5,8 @@ const prisma = new PrismaClient();
 const axios = require('axios');
 
 async function addAllRepos(ownerId, accessToken) {
+  console.log("🚀 addAllRepos() STARTED for owner:", ownerId);
+
   try {
     const res = await axios.get(
       "https://api.github.com/user/repos?per_page=100",
@@ -17,21 +19,26 @@ async function addAllRepos(ownerId, accessToken) {
     );
 
     const repos = res.data;
+    console.log("📁 Found repos:", repos.length);
 
     for (const r of repos) {
       const repoName = r.name;
       const realOwner = r.owner.login;
+
+      console.log("➡️ Processing repo:", repoName);
 
       let repo = await prisma.repository.findFirst({
         where: { name: repoName },
       });
 
       if (repo) {
+        console.log("🔄 Repo exists, updating:", repoName);
         repo = await prisma.repository.update({
           where: { id: repo.id },
           data: { githubOwnerUsername: realOwner, ownerId },
         });
       } else {
+        console.log("✨ Creating new repo:", repoName);
         repo = await prisma.repository.create({
           data: {
             name: repoName,
@@ -42,6 +49,8 @@ async function addAllRepos(ownerId, accessToken) {
       }
 
       // Fetch commits
+      console.log("📨 Fetching commits for:", repoName);
+
       const commitsRes = await axios.get(
         `https://api.github.com/repos/${realOwner}/${repoName}/commits`,
         {
@@ -51,6 +60,8 @@ async function addAllRepos(ownerId, accessToken) {
           },
         }
       );
+
+      console.log(`📝 Found ${commitsRes.data.length} commits for ${repoName}`);
 
       const commits = commitsRes.data.map((c) => ({
         sha: c.sha,
@@ -67,15 +78,19 @@ async function addAllRepos(ownerId, accessToken) {
           create: c,
         });
       }
+
+      console.log(`✅ Saved commits for ${repoName}`);
     }
 
+    console.log("🎉 addAllRepos() COMPLETED");
     return true;
+
   } catch (err) {
     console.error("❌ addAllRepos error:", err.response?.data || err.message);
   } finally {
     await prisma.$disconnect();
+    console.log("🔌 Prisma disconnected");
   }
 }
 
-// Export function
 module.exports = addAllRepos;
