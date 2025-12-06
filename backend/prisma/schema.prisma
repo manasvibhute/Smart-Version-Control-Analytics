@@ -11,7 +11,7 @@ model User {
   id          Int          @id @default(autoincrement())
   username    String       @unique
   email       String       @unique
-  githubId    String? // GitHub user ID
+  githubId    String?      @unique  // GitHub user ID
   accessToken String? // OAuth token
   repos       Repository[]
 }
