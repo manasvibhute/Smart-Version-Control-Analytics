@@ -50,6 +50,10 @@ router.get('/github', (req, res) => {
 
 router.get('/github/callback', async (req, res) => {
   const code = req.query.code;
+  if (!code) {
+    console.error('No code received in callback');
+    return res.status(400).send('Missing code');
+  }
 
   try {
     const tokenRes = await axios.post(
@@ -57,21 +61,27 @@ router.get('/github/callback', async (req, res) => {
       {
         client_id: process.env.GITHUB_CLIENT_ID,
         client_secret: process.env.GITHUB_CLIENT_SECRET,
-        code
+        code,
+        redirect_uri: process.env.GITHUB_REDIRECT_URI
       },
       { headers: { Accept: 'application/json' } }
     );
 
+    console.log('GitHub token response:', tokenRes.data);
+
     const accessToken = tokenRes.data.access_token;
-    if (!accessToken) return res.status(500).send('GitHub OAuth failed: no access token');
+    if (!accessToken) {
+      console.error('No access token received:', tokenRes.data);
+      return res.status(500).send('GitHub OAuth failed: no access token');
+    }
 
     const userRes = await axios.get('https://api.github.com/user', {
       headers: { Authorization: `token ${accessToken}` }
     });
 
     const user = await prisma.user.upsert({
-      where: { username: userRes.data.login },
-      update: { accessToken, githubId: userRes.data.id.toString() },
+      where: { githubId: userRes.data.id.toString() }, // safer if githubId is unique
+      update: { accessToken },
       create: {
         username: userRes.data.login,
         email: userRes.data.email || '',
@@ -80,14 +90,12 @@ router.get('/github/callback', async (req, res) => {
       }
     });
 
-    // 🔑 Trigger repo sync in background
     addAllRepos(prisma, user.id, accessToken).catch(err => {
       console.error("Repo sync failed:", err);
     });
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET);
-  res.redirect(`${FRONTEND_URL}/auth/github/callback?jwt=${token}&accessToken=${accessToken}`);
-
+    res.redirect(`${FRONTEND_URL}/auth/github/callback?jwt=${token}&accessToken=${accessToken}`);
   } catch (err) {
     console.error('OAuth Error:', err.response ? err.response.data : err.message);
     res.status(500).send('GitHub OAuth failed');
