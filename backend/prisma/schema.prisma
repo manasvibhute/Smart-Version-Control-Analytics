@@ -9,9 +9,9 @@ datasource db {
 
 model User {
   id          Int          @id @default(autoincrement())
-  username    String       @unique
-  email       String       @unique
-  githubId    String?
+  username    String
+  email       String?      // not unique, optional
+  githubId    String       @unique   // required and unique
   accessToken String?
   repos       Repository[]
 }
