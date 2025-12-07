@@ -62,6 +62,16 @@ app.use('/auth', authRoutes);
 // ---------- Test endpoint ----------
 app.get('/', (req, res) => res.send('SVCA Backend Running ✅'));
 
+// TEMPORARY: Run prisma db push on Render
+app.get("/run-db-push", async (req, res) => {
+  try {
+    const { execSync } = require("child_process");
+    execSync("npx prisma db push", { stdio: "inherit" });
+    res.send("DB Push Completed Successfully");
+  } catch (err) {
+    res.send("DB Push Failed: " + err.message);
+  }
+});
 
 // ---------- Start server ----------
 app.listen(PORT, () => console.log(`SVCA + ML backend running on port ${PORT}`));
