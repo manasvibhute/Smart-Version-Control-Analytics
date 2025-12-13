@@ -55,7 +55,7 @@ const RepoList = () => {
   return (
     <div className="min-h-screen bg-gray-950 text-white p-6">
 
-      <div className="bg-green-600 text-white px-4 py-2 rounded mb-6">
+      <div className="bg-gray-800 text-white px-4 py-2 rounded mb-6">
         Successfully connected to GitHub!
       </div>
       {username && (
